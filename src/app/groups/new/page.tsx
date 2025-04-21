@@ -12,21 +12,12 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export default function NewGroup() {
   const router = useRouter();
-  const { groups, users, groupMembers, setGroups, setGroupMembers, currentUser } = useAppContext();
+  const { users, setGroups, setGroupMembers, currentUser } = useAppContext();
   
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -125,39 +116,35 @@ export default function NewGroup() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-4">
-              <FormItem>
-                <FormLabel>Group Name</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="Summer Trip, Apartment, etc."
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                  />
-                </FormControl>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Group Name</label>
+                <Input
+                  placeholder="Summer Trip, Apartment, etc."
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
                 {errors.name && (
-                  <FormMessage>{errors.name}</FormMessage>
+                  <p className="text-sm font-medium text-red-500">{errors.name}</p>
                 )}
-              </FormItem>
+              </div>
               
-              <FormItem>
-                <FormLabel>Description</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="Brief description of the group"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                  />
-                </FormControl>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Description</label>
+                <Input
+                  placeholder="Brief description of the group"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                />
                 {errors.description && (
-                  <FormMessage>{errors.description}</FormMessage>
+                  <p className="text-sm font-medium text-red-500">{errors.description}</p>
                 )}
-              </FormItem>
+              </div>
               
-              <FormItem>
-                <FormLabel>Group Members</FormLabel>
-                <FormDescription>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Group Members</label>
+                <p className="text-sm text-gray-500">
                   Select who will be part of this group
-                </FormDescription>
+                </p>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
                   {users.map((user) => {
@@ -206,9 +193,9 @@ export default function NewGroup() {
                 </div>
                 
                 {errors.members && (
-                  <FormMessage>{errors.members}</FormMessage>
+                  <p className="text-sm font-medium text-red-500">{errors.members}</p>
                 )}
-              </FormItem>
+              </div>
             </div>
             
             <div className="flex justify-end gap-2">

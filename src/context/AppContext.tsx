@@ -63,7 +63,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!currentUser && usersData.length > 0) {
       setCurrentUser(usersData[0]);
     }
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+}, []);
 
   return (
     <AppContext.Provider

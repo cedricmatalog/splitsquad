@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, use } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAppContext } from '@/context/AppContext';
@@ -15,11 +15,11 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 
-export default function ExpenseDetails({ params }: { params: { id: string } }) {
-  const { id: expenseId } = params;
+
+export default function ExpenseDetails({ params }: { params: Promise<{ id: string }> }) {
+  const { id: expenseId } = use(params);
   const router = useRouter();
   const { expenses, users, groups, setExpenses, setExpenseParticipants } = useAppContext();
   const { getExpenseParticipants } = useExpenseCalculations();
@@ -32,7 +32,7 @@ export default function ExpenseDetails({ params }: { params: { id: string } }) {
     return (
       <div className="container mx-auto py-8 max-w-6xl text-center">
         <h1 className="text-3xl font-bold mb-4">Expense Not Found</h1>
-        <p className="mb-6 text-gray-500">The expense you're looking for doesn't exist.</p>
+        <p className="mb-6 text-gray-500">The expense you&apos;re looking for doesn&apos;t exist.</p>
         <Button asChild>
           <Link href="/expenses">Back to Expenses</Link>
         </Button>

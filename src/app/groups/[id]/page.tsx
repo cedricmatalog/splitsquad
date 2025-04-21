@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, use } from 'react';
 import Link from 'next/link';
 import { useAppContext } from '@/context/AppContext';
 import useExpenseCalculations from '@/hooks/useExpenseCalculations';
@@ -30,14 +30,13 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { GroupMember, User } from '@/types';
+import { GroupMember } from '@/types';
 
-export default function GroupDetails({ params }: { params: { id: string } }) {
-  const { id: groupId } = params;
+export default function GroupDetails({ params }: { params: Promise<{ id: string }> }) {
+  const { id: groupId } = use(params);
   const { 
     groups, 
-    users, 
-    expenses, 
+    users,
     groupMembers: allGroupMembers, 
     setGroupMembers, 
     currentUser 
@@ -61,7 +60,7 @@ export default function GroupDetails({ params }: { params: { id: string } }) {
     return (
       <div className="container mx-auto py-8 max-w-6xl text-center">
         <h1 className="text-3xl font-bold mb-4">Group Not Found</h1>
-        <p className="mb-6 text-gray-500">The group you're looking for doesn't exist.</p>
+        <p className="mb-6 text-gray-500">The group you&apos;re looking for doesn&apos;t exist.</p>
         <Button asChild>
           <Link href="/groups">Back to Groups</Link>
         </Button>

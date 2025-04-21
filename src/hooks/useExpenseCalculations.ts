@@ -1,7 +1,7 @@
 'use client';
 
 import { useAppContext } from '@/context/AppContext';
-import { Expense, GroupMember, ExpenseParticipant, Payment, User } from '@/types';
+import { Expense, ExpenseParticipant, Payment, User } from '@/types';
 
 interface Balance {
   userId: string;

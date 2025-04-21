@@ -13,10 +13,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useEffect, useState } from 'react';
 
 export default function Header() {
   const pathname = usePathname();
   const { currentUser, users, setCurrentUser } = useAppContext();
+
+  const [isClient, setIsClient] = useState(false);
+
+  // Only run after client-side hydration is complete
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const isActive = (path: string) => {
     return pathname === path;
@@ -56,40 +64,36 @@ export default function Header() {
           <nav className="hidden md:flex gap-6">
             <Link
               href="/dashboard"
-              className={`text-sm font-medium hover:text-primary ${
-                isActive('/dashboard') ? 'text-primary' : 'text-gray-500'
-              }`}
+              className={`text-sm font-medium hover:text-primary ${isActive('/dashboard') ? 'text-primary' : 'text-gray-500'
+                }`}
             >
               Dashboard
             </Link>
             <Link
               href="/groups"
-              className={`text-sm font-medium hover:text-primary ${
-                isActive('/groups') ? 'text-primary' : 'text-gray-500'
-              }`}
+              className={`text-sm font-medium hover:text-primary ${isActive('/groups') ? 'text-primary' : 'text-gray-500'
+                }`}
             >
               Groups
             </Link>
             <Link
               href="/expenses"
-              className={`text-sm font-medium hover:text-primary ${
-                isActive('/expenses') ? 'text-primary' : 'text-gray-500'
-              }`}
+              className={`text-sm font-medium hover:text-primary ${isActive('/expenses') ? 'text-primary' : 'text-gray-500'
+                }`}
             >
               Expenses
             </Link>
             <Link
               href="/settings"
-              className={`text-sm font-medium hover:text-primary ${
-                isActive('/settings') ? 'text-primary' : 'text-gray-500'
-              }`}
+              className={`text-sm font-medium hover:text-primary ${isActive('/settings') ? 'text-primary' : 'text-gray-500'
+                }`}
             >
               Settings
             </Link>
           </nav>
         </div>
 
-        {currentUser && (
+        {isClient && currentUser && (
           <div className="flex items-center gap-4">
             <Button asChild variant="outline" className="hidden md:flex">
               <Link href="/expenses/new">

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAppContext } from '@/context/AppContext';
@@ -13,31 +13,15 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
-export default function NewExpense() {
+function NewExpenseForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const preSelectedGroupId = searchParams.get('groupId');
   
-  const { groups, users, expenses, expenseParticipants, setExpenses, setExpenseParticipants, currentUser } = useAppContext();
+  const { groups, users, setExpenses, setExpenseParticipants, currentUser } = useAppContext();
   const { getGroupMembers } = useExpenseCalculations();
   
   const [description, setDescription] = useState('');
@@ -170,11 +154,6 @@ export default function NewExpense() {
     return user ? user.name : 'Unknown';
   };
   
-  const getGroupName = (groupId: string) => {
-    const group = groups.find(g => g.id === groupId);
-    return group ? group.name : 'Unknown Group';
-  };
-  
   return (
     <div className="container mx-auto py-8 max-w-3xl">
       <div className="mb-8">
@@ -198,110 +177,84 @@ export default function NewExpense() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-4">
-              <FormItem>
-                <FormLabel>Description</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="Dinner, Groceries, Rent, etc."
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                  />
-                </FormControl>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Description</label>
+                <Input
+                  placeholder="Dinner, Groceries, Rent, etc."
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                />
                 {errors.description && (
-                  <FormMessage>{errors.description}</FormMessage>
+                  <p className="text-sm font-medium text-red-500">{errors.description}</p>
                 )}
-              </FormItem>
+              </div>
               
-              <FormItem>
-                <FormLabel>Amount</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    placeholder="0.00"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                  />
-                </FormControl>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Amount</label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                />
                 {errors.amount && (
-                  <FormMessage>{errors.amount}</FormMessage>
+                  <p className="text-sm font-medium text-red-500">{errors.amount}</p>
                 )}
-              </FormItem>
+              </div>
               
-              <FormItem>
-                <FormLabel>Group</FormLabel>
-                <Select
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Group</label>
+                <select
+                  className="w-full px-3 py-2 border rounded-md"
                   value={selectedGroupId}
-                  onValueChange={setSelectedGroupId}
+                  onChange={(e) => setSelectedGroupId(e.target.value)}
                 >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a group" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {groups.map((group) => (
-                      <SelectItem key={group.id} value={group.id}>
-                        {group.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  <option value="">Select a group</option>
+                  {groups.map((group) => (
+                    <option key={group.id} value={group.id}>
+                      {group.name}
+                    </option>
+                  ))}
+                </select>
                 {errors.selectedGroupId && (
-                  <FormMessage>{errors.selectedGroupId}</FormMessage>
+                  <p className="text-sm font-medium text-red-500">{errors.selectedGroupId}</p>
                 )}
-              </FormItem>
+              </div>
               
-              <FormItem>
-                <FormLabel>Paid by</FormLabel>
-                <Select
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Paid by</label>
+                <select
+                  className="w-full px-3 py-2 border rounded-md"
                   value={paidBy}
-                  onValueChange={setPaidBy}
+                  onChange={(e) => setPaidBy(e.target.value)}
                 >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select who paid" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {selectedGroupId ? 
-                      getGroupMembers(selectedGroupId).map((user) => (
-                        <SelectItem key={user.id} value={user.id}>
-                          <div className="flex items-center gap-2">
-                            <Avatar className="h-6 w-6">
-                              <AvatarImage src={user.avatar} alt={user.name} />
-                              <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                            </Avatar>
-                            <span>{user.name}</span>
-                          </div>
-                        </SelectItem>
-                      )) : 
-                      <SelectItem value="" disabled>Select a group first</SelectItem>
-                    }
-                  </SelectContent>
-                </Select>
+                  <option value="">Select who paid</option>
+                  {selectedGroupId ? 
+                    getGroupMembers(selectedGroupId).map((user) => (
+                      <option key={user.id} value={user.id}>
+                        {user.name}
+                      </option>
+                    )) : 
+                    <option value="" disabled>Select a group first</option>
+                  }
+                </select>
                 {errors.paidBy && (
-                  <FormMessage>{errors.paidBy}</FormMessage>
+                  <p className="text-sm font-medium text-red-500">{errors.paidBy}</p>
                 )}
-              </FormItem>
+              </div>
               
-              <FormItem>
-                <FormLabel>Split Type</FormLabel>
-                <Select
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Split Type</label>
+                <select
+                  className="w-full px-3 py-2 border rounded-md"
                   value={splitType}
-                  onValueChange={setSplitType}
+                  onChange={(e) => setSplitType(e.target.value)}
                 >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="How to split the expense" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="equal">Equal Split</SelectItem>
-                    <SelectItem value="custom">Custom Split</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FormItem>
+                  <option value="equal">Equal Split</option>
+                  <option value="custom">Custom Split</option>
+                </select>
+              </div>
               
               {selectedGroupId && (
                 <div className="border rounded-lg p-4 space-y-4">
@@ -334,7 +287,7 @@ export default function NewExpense() {
                   ))}
                   
                   {errors.shares && (
-                    <FormMessage>{errors.shares}</FormMessage>
+                    <p className="text-sm font-medium text-red-500">{errors.shares}</p>
                   )}
                 </div>
               )}
@@ -356,5 +309,13 @@ export default function NewExpense() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function NewExpensePage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <NewExpenseForm />
+    </Suspense>
   );
 } 
