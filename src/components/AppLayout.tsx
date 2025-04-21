@@ -27,13 +27,13 @@ function NavItem({ href, children, isActive, icon }: NavItemProps) {
   return (
     <Link
       href={href}
-      className={`flex items-center px-4 py-2 rounded-md transition-all duration-200 ${
+      className={`flex items-center px-4 py-2 rounded-md transition-colors duration-200 font-medium w-[120px] justify-center ${
         isActive
-          ? 'bg-primary/10 text-primary font-medium shadow-sm'
+          ? 'bg-primary/10 text-primary shadow-sm'
           : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
       }`}
     >
-      {icon && <span className="mr-2">{icon}</span>}
+      {icon && <span className="w-5 h-5 mr-2 flex items-center justify-center">{icon}</span>}
       {children}
     </Link>
   );
@@ -73,9 +73,9 @@ export function AppLayout({ children }: AppLayoutProps) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      <header className="border-b bg-white shadow-sm sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-3 flex justify-between items-center">
+    <div className="min-h-screen flex flex-col bg-gray-50 content-shift-free">
+      <header className="border-b bg-white shadow-sm sticky top-0 z-10 h-16 force-gpu">
+        <div className="container mx-auto px-4 h-full flex justify-between items-center">
           <div className="flex items-center gap-8">
             <Link
               href="/dashboard"
@@ -107,21 +107,21 @@ export function AppLayout({ children }: AppLayoutProps) {
                 isActive={pathname === '/dashboard'}
                 icon={<LayoutDashboard size={16} />}
               >
-                Dashboard
+                <span className="min-w-[70px]">Dashboard</span>
               </NavItem>
               <NavItem
                 href="/groups"
                 isActive={pathname === '/groups' || pathname.startsWith('/groups/')}
                 icon={<Users size={16} />}
               >
-                Groups
+                <span className="min-w-[50px]">Groups</span>
               </NavItem>
               <NavItem
                 href="/expenses"
                 isActive={pathname === '/expenses' || pathname.startsWith('/expenses/')}
                 icon={<DollarSign size={16} />}
               >
-                Expenses
+                <span className="min-w-[60px]">Expenses</span>
               </NavItem>
             </nav>
           </div>
@@ -191,9 +191,9 @@ export function AppLayout({ children }: AppLayoutProps) {
       ></div>
 
       <div
-        className={`fixed top-0 right-0 h-full w-3/4 max-w-xs bg-white z-50 shadow-xl transform transition-transform duration-300 ease-in-out ${
+        className={`fixed top-0 right-0 h-full w-3/4 max-w-xs bg-white z-50 shadow-xl transform transition-optimized ${
           mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
-        } md:hidden`}
+        } md:hidden force-gpu`}
       >
         <div className="flex flex-col h-full">
           <div className="p-4 border-b flex justify-between items-center">
@@ -213,44 +213,50 @@ export function AppLayout({ children }: AppLayoutProps) {
             <div className="space-y-1 px-2">
               <Link
                 href="/dashboard"
-                className={`flex items-center px-4 py-3 rounded-md transition-all ${
+                className={`flex items-center px-4 py-3 rounded-md transition-colors duration-200 ${
                   pathname === '/dashboard'
                     ? 'bg-primary/10 text-primary font-medium'
                     : 'text-gray-700 hover:bg-gray-100'
                 }`}
                 onClick={toggleMobileMenu}
               >
-                <LayoutDashboard size={20} className="mr-3" />
-                <span>Dashboard</span>
-                <ChevronRight size={16} className="ml-auto" />
+                <span className="w-6 h-6 mr-3 flex items-center justify-center">
+                  <LayoutDashboard size={20} />
+                </span>
+                <span className="flex-1">Dashboard</span>
+                <ChevronRight size={16} className="ml-auto flex-shrink-0" />
               </Link>
 
               <Link
                 href="/groups"
-                className={`flex items-center px-4 py-3 rounded-md transition-all ${
+                className={`flex items-center px-4 py-3 rounded-md transition-colors duration-200 ${
                   pathname === '/groups' || pathname.startsWith('/groups/')
                     ? 'bg-primary/10 text-primary font-medium'
                     : 'text-gray-700 hover:bg-gray-100'
                 }`}
                 onClick={toggleMobileMenu}
               >
-                <Users size={20} className="mr-3" />
-                <span>Groups</span>
-                <ChevronRight size={16} className="ml-auto" />
+                <span className="w-6 h-6 mr-3 flex items-center justify-center">
+                  <Users size={20} />
+                </span>
+                <span className="flex-1">Groups</span>
+                <ChevronRight size={16} className="ml-auto flex-shrink-0" />
               </Link>
 
               <Link
                 href="/expenses"
-                className={`flex items-center px-4 py-3 rounded-md transition-all ${
+                className={`flex items-center px-4 py-3 rounded-md transition-colors duration-200 ${
                   pathname === '/expenses' || pathname.startsWith('/expenses/')
                     ? 'bg-primary/10 text-primary font-medium'
                     : 'text-gray-700 hover:bg-gray-100'
                 }`}
                 onClick={toggleMobileMenu}
               >
-                <DollarSign size={20} className="mr-3" />
-                <span>Expenses</span>
-                <ChevronRight size={16} className="ml-auto" />
+                <span className="w-6 h-6 mr-3 flex items-center justify-center">
+                  <DollarSign size={20} />
+                </span>
+                <span className="flex-1">Expenses</span>
+                <ChevronRight size={16} className="ml-auto flex-shrink-0" />
               </Link>
             </div>
           </nav>
@@ -295,7 +301,7 @@ export function AppLayout({ children }: AppLayoutProps) {
 
       <main className="flex-1 pb-10">{children}</main>
 
-      <footer className="border-t py-6 bg-white">
+      <footer className="border-t py-6 bg-white force-gpu">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-gray-500 text-sm">

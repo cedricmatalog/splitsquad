@@ -75,6 +75,7 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  scroll-behavior: smooth;
 }
 
 .dark {
@@ -117,6 +118,8 @@
   }
   body {
     @apply bg-background text-foreground;
+    overflow-y: scroll; /* Always show scrollbar to prevent width changes */
+    overflow-x: hidden;
   }
   
   h1, h2, h3, h4, h5, h6 {
@@ -219,4 +222,48 @@
     min-height: 44px;
     min-width: 44px;
   }
+}
+
+/* Focus styles */
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Prevent layout shift */
+.force-gpu {
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Improve anchor link transitions */
+a {
+  text-decoration: none;
+  position: relative;
+  transition: color 0.2s ease;
+}
+
+/* Image loading */
+img {
+  transition: opacity 0.3s ease;
+}
+
+img.loading {
+  opacity: 0;
+}
+
+/* Optimized transition class */
+.transition-optimized {
+  will-change: transform, opacity;
+  transition-property: transform, opacity;
+  transition-duration: 0.3s;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Layout shift prevention */
+.content-shift-free {
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
 }

@@ -36,33 +36,35 @@ export function GroupList({ groups, limit }: GroupListProps) {
         {displayGroups.map(group => (
           <Card
             key={group.id}
-            className="border hover:shadow-md transition-all duration-200 overflow-hidden 
-              flex-shrink-0 w-[85%] sm:w-[45%] md:w-full mr-4 md:mr-0"
+            className="border border-gray-200 hover:shadow-md transition-all duration-200 h-full flex flex-col
+              flex-shrink-0 w-[85%] sm:w-[45%] md:w-full mr-4 md:mr-0 rounded-lg overflow-hidden"
           >
-            <CardHeader className="pb-3">
+            <CardHeader className="pb-3 pt-3">
               <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle className="text-lg line-clamp-1">{group.name}</CardTitle>
-                  <CardDescription className="line-clamp-2 mt-1">
+                <div className="min-w-0 flex-1 pr-2">
+                  <CardTitle className="text-lg font-semibold truncate">{group.name}</CardTitle>
+                  <CardDescription className="line-clamp-2 mt-1 text-sm break-words h-10 text-gray-600">
                     {group.description || 'No description'}
                   </CardDescription>
                 </div>
-                <span className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Users size={16} className="text-primary" />
+                <span className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
+                  <Users size={16} className="text-blue-600" />
                 </span>
               </div>
             </CardHeader>
-            <CardContent className="pb-4">
+            <CardContent className="pb-4 flex-grow">
               <div className="flex items-center text-sm text-gray-500 gap-1">
-                <Calendar size={14} />
-                <span>Created: {new Date(group.date).toLocaleDateString()}</span>
+                <Calendar size={14} className="flex-shrink-0" />
+                <span className="truncate">
+                  Created: {new Date(group.date).toLocaleDateString()}
+                </span>
               </div>
             </CardContent>
-            <CardFooter className="pt-0 border-t bg-gray-50">
+            <CardFooter className="pt-3 pb-3 border-t bg-gray-50 mt-auto">
               <Button
                 asChild
                 variant="ghost"
-                className="w-full text-primary hover:text-primary-foreground hover:bg-primary"
+                className="w-full text-blue-600 hover:text-white hover:bg-blue-600"
               >
                 <Link
                   href={`/groups/${group.id}`}
@@ -77,17 +79,21 @@ export function GroupList({ groups, limit }: GroupListProps) {
         ))}
 
         <Card
-          className="border-dashed border-2 hover:border-primary/50 transition-colors duration-200 
-          flex items-center justify-center bg-transparent hover:bg-primary/5
-          flex-shrink-0 w-[85%] sm:w-[45%] md:w-full mr-4 md:mr-0"
+          className="border border-dashed border-gray-300 hover:border-blue-400 transition-colors duration-200 
+          flex flex-col items-center justify-center bg-white hover:bg-blue-50/30 h-full
+          flex-shrink-0 w-[85%] sm:w-[45%] md:w-full mr-4 md:mr-0 rounded-lg"
         >
-          <CardContent className="text-center p-6">
-            <div className="mb-4 w-14 h-14 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
-              <PlusCircle size={24} className="text-primary" />
+          <CardContent className="text-center p-6 flex flex-col h-full justify-center">
+            <div className="mb-4 w-14 h-14 mx-auto rounded-full bg-blue-50 flex items-center justify-center">
+              <PlusCircle size={24} className="text-blue-600" />
             </div>
-            <h3 className="font-semibold mb-2 text-gray-800">Create New Group</h3>
-            <p className="text-sm text-gray-500 mb-4">Start tracking expenses with friends</p>
-            <Button asChild className="gap-2">
+            <h3 className="font-semibold mb-2 text-gray-800 truncate max-w-full">
+              Create New Group
+            </h3>
+            <p className="text-sm text-gray-500 mb-4 line-clamp-2 h-10">
+              Start tracking expenses with friends
+            </p>
+            <Button asChild className="gap-2 mt-auto bg-blue-600 hover:bg-blue-700">
               <Link href="/groups/new">
                 <PlusCircle size={16} />
                 Create Group

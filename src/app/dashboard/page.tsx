@@ -46,58 +46,66 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8 sm:mb-10">
         <UserBalanceCard />
 
-        <Card className="overflow-hidden border border-gray-200 hover:shadow-md transition-shadow">
-          <CardHeader className="pb-2 bg-gray-50 border-b">
-            <CardTitle className="text-sm font-medium text-gray-500 flex items-center gap-2">
-              <Users size={16} className="text-primary" />
-              Total Groups
+        <Card className="border border-gray-200 hover:shadow-md transition-shadow flex flex-col rounded-lg overflow-hidden">
+          <CardHeader className="pb-3 pt-3 bg-gray-50">
+            <CardTitle className="text-sm font-medium text-gray-700 flex items-center gap-2">
+              <Users size={16} className="text-blue-600 flex-shrink-0" />
+              <span className="truncate">Total Groups</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="pt-4">
-            <div className="text-3xl font-bold">{groups.length}</div>
-            <p className="text-sm text-gray-500 mt-1">Active expense groups</p>
+          <CardContent className="pt-6 pb-6 flex-grow flex flex-col justify-center">
+            <div className="text-3xl font-bold truncate">{groups.length}</div>
+            <p className="text-sm text-gray-500 mt-1 truncate">Active expense groups</p>
           </CardContent>
         </Card>
 
         {/* Quick actions card - full width on mobile for easy tapping */}
-        <Card className="overflow-hidden border border-gray-200 hover:shadow-md transition-shadow sm:col-span-2 lg:col-span-1">
-          <CardHeader className="pb-2 bg-gray-50 border-b">
-            <CardTitle className="text-sm font-medium text-gray-500 flex items-center gap-2">
-              <PlusCircle size={16} className="text-primary" />
-              Quick Actions
+        <Card className="border border-gray-200 hover:shadow-md transition-shadow sm:col-span-2 lg:col-span-1 flex flex-col rounded-lg overflow-hidden">
+          <CardHeader className="pb-3 pt-3 bg-gray-50">
+            <CardTitle className="text-sm font-medium text-gray-700 flex items-center gap-2">
+              <PlusCircle size={16} className="text-blue-600 flex-shrink-0" />
+              <span className="truncate">Quick Actions</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="pt-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              <Button className="h-10 px-2 sm:px-4" asChild>
-                <Link href="/expenses/new" className="gap-2">
-                  <PlusCircle size={16} />
-                  <span>Add Expense</span>
-                </Link>
-              </Button>
-              <Button className="h-10 px-2 sm:px-4" variant="outline" asChild>
-                <Link href="/groups/new" className="gap-2">
-                  <Users size={16} />
-                  <span>Create Group</span>
-                </Link>
-              </Button>
+          <CardContent className="pt-4 pb-4 flex-grow flex flex-row justify-center">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <Link href="/expenses/new" className="w-full">
+                <Button className="bg-blue-600 hover:bg-blue-700 text-white w-full">
+                  <div className="flex items-center justify-center gap-2">
+                    <PlusCircle size={16} className="flex-shrink-0" />
+                    <span>Add Expense</span>
+                  </div>
+                </Button>
+              </Link>
+
+              <Link href="/groups/new" className="w-full">
+                <Button
+                  variant="outline"
+                  className="border-gray-300 hover:bg-gray-100 text-gray-700 hover:text-gray-900 w-full"
+                >
+                  <div className="flex items-center justify-center gap-2">
+                    <Users size={16} className="flex-shrink-0" />
+                    <span>Create Group</span>
+                  </div>
+                </Button>
+              </Link>
             </div>
           </CardContent>
         </Card>
 
         {/* Recent activity card - display on top on mobile */}
-        <Card className="overflow-hidden border border-gray-200 hover:shadow-md transition-shadow">
-          <CardHeader className="pb-2 bg-gray-50 border-b">
-            <CardTitle className="text-sm font-medium text-gray-500 flex items-center gap-2">
-              <Clock size={16} className="text-primary" />
-              Recent Activity
+        <Card className="border border-gray-200 hover:shadow-md transition-shadow flex flex-col rounded-lg overflow-hidden">
+          <CardHeader className="pb-3 pt-3 bg-gray-50">
+            <CardTitle className="text-sm font-medium text-gray-700 flex items-center gap-2">
+              <Clock size={16} className="text-blue-600 flex-shrink-0" />
+              <span className="truncate">Recent Activity</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="pt-4">
+          <CardContent className="pt-6 pb-6 flex-grow flex flex-col justify-center">
             {expenses && expenses.length > 0 ? (
-              <div className="text-3xl font-bold">{expenses.length}</div>
+              <div className="text-3xl font-bold truncate">{expenses.length}</div>
             ) : (
-              <p className="text-sm text-gray-500">No recent activities</p>
+              <p className="text-sm text-gray-500 truncate">No recent activities</p>
             )}
           </CardContent>
         </Card>
@@ -105,14 +113,11 @@ export default function Dashboard() {
 
       {/* Mobile-friendly group section with swipe indicator */}
       <div className="mb-6 flex items-center justify-between">
-        <h2 className="text-xl font-semibold">Your Groups</h2>
-        <Button variant="ghost" size="sm" asChild>
-          <Link
-            href="/groups"
-            className="text-primary hover:text-primary/90 flex items-center gap-1"
-          >
-            View all
-            <ArrowRight size={14} />
+        <h2 className="text-xl font-semibold truncate">Your Groups</h2>
+        <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700" asChild>
+          <Link href="/groups" className="flex items-center gap-1">
+            <span className="truncate">View all</span>
+            <ArrowRight size={14} className="flex-shrink-0" />
           </Link>
         </Button>
       </div>
@@ -120,7 +125,7 @@ export default function Dashboard() {
       {/* Add scroll indicator for mobile */}
       <div className="md:hidden mb-4 text-xs text-gray-500 flex items-center justify-center">
         <div className="w-10 h-1 bg-gray-200 rounded-full mx-1"></div>
-        <span>Scroll horizontally to see more</span>
+        <span className="truncate">Scroll horizontally to see more</span>
         <div className="w-10 h-1 bg-gray-200 rounded-full mx-1"></div>
       </div>
 
@@ -129,7 +134,11 @@ export default function Dashboard() {
 
       {/* Mobile floating action button for quick expense creation */}
       <div className="fixed right-4 bottom-20 md:hidden">
-        <Button size="lg" className="h-14 w-14 rounded-full shadow-lg" asChild>
+        <Button
+          size="lg"
+          className="h-14 w-14 rounded-full shadow-lg bg-blue-600 hover:bg-blue-700"
+          asChild
+        >
           <Link href="/expenses/new" aria-label="Add new expense">
             <PlusCircle size={24} />
           </Link>

@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { format, isAfter, isBefore, startOfDay, endOfDay } from 'date-fns';
+import { Search, Calendar, X, PlusCircle, Eye } from 'lucide-react';
 
 interface ExpenseListProps {
   expenses: Expense[];
@@ -89,67 +90,74 @@ export function ExpenseList({ expenses, groupId, showGroupColumn = true }: Expen
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex justify-between items-center">
-          <span>Expenses</span>
+    <Card className="border shadow-sm hover:shadow-md transition-all duration-200">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex justify-between items-center text-xl">
+          <span className="flex items-center gap-2">
+            <PlusCircle size={18} className="text-primary" />
+            Expenses
+          </span>
           {groupId && (
             <Button asChild>
-              <Link href={`/expenses/new?groupId=${groupId}`}>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="mr-2"
-                >
-                  <path d="M12 5v14M5 12h14"></path>
-                </svg>
-                Add Expense
+              <Link href={`/expenses/new?groupId=${groupId}`} className="flex items-center gap-2">
+                <PlusCircle size={16} />
+                <span className="hidden sm:inline">Add Expense</span>
+                <span className="sm:hidden">Add</span>
               </Link>
             </Button>
           )}
         </CardTitle>
 
-        <div className="flex flex-col md:flex-row gap-3 mt-4">
-          <Input
-            type="text"
-            placeholder="Search expenses..."
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            className="md:w-64"
-          />
+        <div className="flex flex-col sm:flex-row gap-3 mt-4">
+          <div className="relative w-full sm:w-64">
+            <Search
+              size={16}
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+            />
+            <Input
+              type="text"
+              placeholder="Search expenses..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="pl-9 pr-8"
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
 
-          <div className="flex gap-2 items-center">
-            <div className="w-40">
+          <div className="flex gap-2 items-center flex-wrap">
+            <div className="w-full sm:w-36">
               <DatePicker value={startDate} onChange={setStartDate} placeholder="Start date" />
             </div>
-            <span>to</span>
-            <div className="w-40">
+            <span className="hidden sm:inline">to</span>
+            <div className="w-full sm:w-36">
               <DatePicker value={endDate} onChange={setEndDate} placeholder="End date" />
             </div>
 
-            <Button variant="ghost" size="sm" onClick={resetFilters}>
-              Reset
-            </Button>
+            {(searchTerm || startDate || endDate) && (
+              <Button variant="ghost" size="sm" onClick={resetFilters} className="ml-auto sm:ml-0">
+                Reset
+              </Button>
+            )}
           </div>
         </div>
       </CardHeader>
       <CardContent>
-        <div className="rounded-md border">
+        <div className="rounded-md border overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Description</TableHead>
+                <TableHead className="font-medium">Description</TableHead>
                 <TableHead>Amount</TableHead>
                 <TableHead>Paid By</TableHead>
-                {showGroupColumn && <TableHead>Group</TableHead>}
-                <TableHead>Date</TableHead>
+                {showGroupColumn && <TableHead className="hidden md:table-cell">Group</TableHead>}
+                <TableHead className="hidden sm:table-cell">Date</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -157,7 +165,12 @@ export function ExpenseList({ expenses, groupId, showGroupColumn = true }: Expen
               {filteredExpenses.length > 0 ? (
                 filteredExpenses.map(expense => (
                   <TableRow key={expense.id}>
-                    <TableCell className="font-medium">{expense.description}</TableCell>
+                    <TableCell className="font-medium max-w-[120px] sm:max-w-none">
+                      <div className="truncate">{expense.description}</div>
+                      <div className="text-xs text-gray-500 sm:hidden">
+                        {formatDate(expense.date)}
+                      </div>
+                    </TableCell>
                     <TableCell>{formatAmount(expense.amount)}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
@@ -168,23 +181,27 @@ export function ExpenseList({ expenses, groupId, showGroupColumn = true }: Expen
                           />
                           <AvatarFallback>{getUserName(expense.paidBy).charAt(0)}</AvatarFallback>
                         </Avatar>
-                        <span>{getUserName(expense.paidBy)}</span>
+                        <span className="hidden sm:inline">{getUserName(expense.paidBy)}</span>
                       </div>
                     </TableCell>
                     {showGroupColumn && (
-                      <TableCell>
+                      <TableCell className="hidden md:table-cell">
                         <Link
                           href={`/groups/${expense.groupId}`}
-                          className="text-blue-600 hover:underline"
+                          className="text-primary hover:underline"
                         >
                           {getGroupName(expense.groupId)}
                         </Link>
                       </TableCell>
                     )}
-                    <TableCell>{formatDate(expense.date)}</TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      {formatDate(expense.date)}
+                    </TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" asChild>
-                        <Link href={`/expenses/${expense.id}`}>View</Link>
+                      <Button variant="ghost" size="sm" asChild className="h-8 w-8 p-0">
+                        <Link href={`/expenses/${expense.id}`} aria-label="View expense details">
+                          <Eye size={16} />
+                        </Link>
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -195,7 +212,11 @@ export function ExpenseList({ expenses, groupId, showGroupColumn = true }: Expen
                     colSpan={showGroupColumn ? 6 : 5}
                     className="text-center text-gray-500 h-24"
                   >
-                    No expenses found.
+                    <div className="flex flex-col items-center py-4">
+                      <Calendar className="h-10 w-10 text-gray-300 mb-2" />
+                      <p>No expenses found</p>
+                      <p className="text-sm text-gray-400">Try adjusting your filters</p>
+                    </div>
                   </TableCell>
                 </TableRow>
               )}
