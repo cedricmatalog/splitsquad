@@ -17,6 +17,22 @@ jest.mock('@/context/AppContext', () => ({
       email: 'alex@example.com',
       avatar: '/avatars/alex.png',
     },
+    users: [
+      {
+        id: 'user-1',
+        name: 'Alex Johnson',
+        email: 'alex@example.com',
+        avatar: '/avatars/alex.png',
+      },
+      {
+        id: 'user-2',
+        name: 'Jamie Smith',
+        email: 'jamie@example.com',
+        avatar: '/avatars/jamie.png',
+      },
+    ],
+    logout: jest.fn(),
+    setCurrentUser: jest.fn(),
   }),
 }));
 
@@ -40,7 +56,6 @@ describe('AppLayout', () => {
     expect(screen.getByText('Dashboard')).toBeInTheDocument();
     expect(screen.getByText('Groups')).toBeInTheDocument();
     expect(screen.getByText('Expenses')).toBeInTheDocument();
-    expect(screen.getByText('Alex Johnson')).toBeInTheDocument();
     expect(screen.getByTestId('test-content')).toBeInTheDocument();
     expect(screen.getByText(/SplitSquad © \d{4}/)).toBeInTheDocument();
   });

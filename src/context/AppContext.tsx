@@ -1,8 +1,9 @@
 'use client';
 
-import { createContext, useContext, ReactNode, useEffect } from 'react';
+import { createContext, useContext, ReactNode, useEffect, useState } from 'react';
 import useLocalStorage from '@/hooks/useLocalStorage';
 import { User, Group, Expense, GroupMember, ExpenseParticipant, Payment } from '@/types';
+import { signIn, signOut, getCurrentUser } from '@/services/auth';
 
 // Import mock data
 import usersData from '@/data/users.json';
@@ -32,6 +33,7 @@ interface AppContextType {
   currentUser: User | null;
   setCurrentUser: (user: User | null) => void;
   isAuthenticated: boolean;
+  isLoading: boolean;
   login: (email: string, password: string) => Promise<User | null>;
   logout: () => void;
 }
@@ -48,7 +50,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     []
   );
   const [payments, setPayments] = useLocalStorage<Payment[]>('payments', []);
-  const [currentUser, setCurrentUser] = useLocalStorage<User | null>('currentUser', null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Initialize from mock data if localStorage is empty
   useEffect(() => {
@@ -70,33 +73,49 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (payments.length === 0) {
       setPayments(paymentsData);
     }
-
-    // Don't automatically set current user, let them log in first
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Password validation (in a real app, you would use proper hashing)
-  // For demo purposes, we use a simple scheme where all users have password "password123"
-  const validatePassword = (user: User, password: string): boolean => {
-    // In a real app, you would hash the password and compare it
-    return password === 'password123';
-  };
-
-  // Login function
-  const login = async (email: string, password: string): Promise<User | null> => {
-    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-
-    if (user && validatePassword(user, password)) {
-      setCurrentUser(user);
-      return user;
+  // Load current user from Supabase on mount
+  useEffect(() => {
+    async function loadUser() {
+      try {
+        const user = await getCurrentUser();
+        if (user) {
+          setCurrentUser(user);
+        }
+      } catch (error) {
+        console.error('Error loading user:', error);
+      } finally {
+        setIsLoading(false);
+      }
     }
 
-    return null;
+    loadUser();
+  }, []);
+
+  // Login function using Supabase
+  const login = async (email: string, password: string): Promise<User | null> => {
+    try {
+      const user = await signIn(email, password);
+      if (user) {
+        setCurrentUser(user);
+      }
+      return user;
+    } catch (error) {
+      console.error('Login error:', error);
+      return null;
+    }
   };
 
-  // Logout function
-  const logout = () => {
-    setCurrentUser(null);
+  // Logout function using Supabase
+  const logout = async () => {
+    try {
+      await signOut();
+      setCurrentUser(null);
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   return (
@@ -117,6 +136,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         currentUser,
         setCurrentUser,
         isAuthenticated: !!currentUser,
+        isLoading,
         login,
         logout,
       }}

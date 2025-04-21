@@ -11,23 +11,35 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
 export default function Dashboard() {
-  const { groups, currentUser, isAuthenticated } = useAppContext();
+  const { groups, isAuthenticated, isLoading } = useAppContext();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!isLoading && !isAuthenticated) {
       router.push('/login');
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, isLoading, router]);
 
-  // If not authenticated, show nothing while redirecting
+  // If loading, show loading state
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="text-center">
+          <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="mt-3 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If not authenticated and not loading, show nothing while redirecting
   if (!isAuthenticated) {
     return null;
   }
 
   return (
     <div className="container mx-auto py-8 max-w-6xl">
-      <DashboardHeader currentUser={currentUser} />
+      <DashboardHeader />
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <UserBalanceCard />

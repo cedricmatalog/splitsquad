@@ -3,178 +3,197 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useAppContext } from '@/context/AppContext';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { signUp } from '@/services/auth';
 
-export default function SignupPage() {
-  const [name, setName] = useState('');
+export default function SignUp() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [name, setName] = useState('');
   const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [success, setSuccess] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const router = useRouter();
-  const { users, setUsers, setCurrentUser } = useAppContext();
+
+  const validateEmail = (email: string) => {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+  };
+
+  const validatePassword = (password: string) => {
+    return password.length >= 6;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
+    setLoading(true);
 
-    // Basic validation
+    // Validate form inputs
+    if (!validateEmail(email)) {
+      setError('Please enter a valid email address');
+      setLoading(false);
+      return;
+    }
+
+    if (!validatePassword(password)) {
+      setError('Password must be at least 6 characters long');
+      setLoading(false);
+      return;
+    }
+
     if (password !== confirmPassword) {
-      setError("Passwords don't match");
+      setError('Passwords do not match');
+      setLoading(false);
       return;
     }
 
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters');
+    if (!name.trim()) {
+      setError('Please enter your name');
+      setLoading(false);
       return;
     }
-
-    // Check if email already exists
-    if (users.some(user => user.email.toLowerCase() === email.toLowerCase())) {
-      setError('Email already in use');
-      return;
-    }
-
-    setIsLoading(true);
 
     try {
-      // In a real app, you would send this data to an API
-      // For demo purposes, we'll just add the user to the context
-      const newUser = {
-        id: `user-${Date.now()}`,
-        name,
-        email,
-        avatar: `/avatars/default.png`,
-      };
+      // Register user
+      const user = await signUp(email, password, name);
 
-      // Add user to context
-      setUsers([...users, newUser]);
+      if (!user) {
+        setError('Registration failed. Please try again.');
+        return;
+      }
 
-      // Set as current user
-      setCurrentUser(newUser);
+      // Look at Supabase auth response to see if email confirmation is needed
+      // Since we redirect to login after email confirmation, we assume email confirmation is required
+      setSuccess(
+        'Registration successful! Please check your email to confirm your account before logging in.'
+      );
 
-      // Redirect to dashboard
-      router.push('/dashboard');
-    } catch (err) {
-      setError('An error occurred. Please try again.');
-      console.error(err);
+      // Don't redirect yet, let the user see the confirmation message
+      setTimeout(() => {
+        router.push('/login');
+      }, 5000);
+    } catch (err: unknown) {
+      console.error('Error during signup:', err);
+      if (
+        typeof err === 'object' &&
+        err &&
+        'message' in err &&
+        typeof err.message === 'string' &&
+        err.message?.includes('Email already registered')
+      ) {
+        setError('Email already in use. Please try a different email or log in.');
+      } else {
+        setError(
+          typeof err === 'object' && err && 'message' in err && typeof err.message === 'string'
+            ? err.message
+            : 'An unexpected error occurred. Please try again.'
+        );
+      }
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+    <div className="flex min-h-screen items-center justify-center bg-gray-100">
+      <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow-md">
         <div className="text-center">
           <h1 className="text-3xl font-bold">Create an Account</h1>
-          <p className="mt-2 text-gray-600">Join SplitSquad to manage shared expenses</p>
+          <p className="mt-2 text-gray-600">Join SplitSquad to start splitting expenses</p>
         </div>
 
-        <div className="mt-8 bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          {error && (
-            <div className="mb-4 p-4 text-sm border border-red-400 bg-red-100 text-red-700 rounded">
-              {error}
-            </div>
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          {error && <div className="p-3 bg-red-50 text-red-500 rounded-md text-sm">{error}</div>}
+          {success && (
+            <div className="p-3 bg-green-50 text-green-700 rounded-md text-sm">{success}</div>
           )}
 
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                Full Name
-              </label>
-              <div className="mt-1">
-                <Input
-                  id="name"
-                  name="name"
-                  type="text"
-                  autoComplete="name"
-                  required
-                  value={name}
-                  onChange={e => setName(e.target.value)}
-                  className="w-full"
-                  placeholder="Alex Johnson"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email address
-              </label>
-              <div className="mt-1">
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  className="w-full"
-                  placeholder="you@example.com"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <div className="mt-1">
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  className="w-full"
-                  placeholder="••••••••"
-                />
-              </div>
-              <p className="mt-1 text-xs text-gray-500">Must be at least 8 characters</p>
-            </div>
-
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                Confirm Password
-              </label>
-              <div className="mt-1">
-                <Input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  value={confirmPassword}
-                  onChange={e => setConfirmPassword(e.target.value)}
-                  className="w-full"
-                  placeholder="••••••••"
-                />
-              </div>
-            </div>
-
-            <div>
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? 'Creating account...' : 'Create account'}
-              </Button>
-            </div>
-          </form>
-
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
-              Already have an account?{' '}
-              <Link href="/login" className="text-primary hover:text-primary-dark">
-                Sign in
-              </Link>
-            </p>
+          <div>
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+              Full Name
+            </label>
+            <input
+              id="name"
+              name="name"
+              type="text"
+              required
+              value={name}
+              onChange={e => setName(e.target.value)}
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              placeholder="John Doe"
+            />
           </div>
+
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              Email
+            </label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              required
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              placeholder="you@example.com"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              Password
+            </label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              required
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              placeholder="******"
+            />
+            <p className="mt-1 text-xs text-gray-500">Must be at least 6 characters</p>
+          </div>
+
+          <div>
+            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
+              Confirm Password
+            </label>
+            <input
+              id="confirmPassword"
+              name="confirmPassword"
+              type="password"
+              required
+              value={confirmPassword}
+              onChange={e => setConfirmPassword(e.target.value)}
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              placeholder="******"
+            />
+          </div>
+
+          <div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+            >
+              {loading ? 'Signing Up...' : 'Sign Up'}
+            </button>
+          </div>
+        </form>
+
+        <div className="mt-6 text-center">
+          <p className="text-sm text-gray-600">
+            Already have an account?{' '}
+            <Link href="/login" className="font-medium text-blue-600 hover:text-blue-500">
+              Log in
+            </Link>
+          </p>
         </div>
       </div>
     </div>
