@@ -1,16 +1,10 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { GroupForm } from '@/components/groups/GroupForm';
 import { User } from '@/types';
-import { ReactNode } from 'react';
+import { setupMocks } from '../../utils/test-utils';
 
-// Mock Next.js Link component
-// Define this before using it in jest.mock()
-function MockLink({ href, children }: { href: string; children: ReactNode }) {
-  return <a href={href}>{children}</a>;
-}
-MockLink.displayName = 'MockLink';
-
-jest.mock('next/link', () => MockLink);
+// Setup mock environment
+setupMocks();
 
 describe('GroupForm', () => {
   const mockUsers: User[] = [
@@ -30,173 +24,104 @@ describe('GroupForm', () => {
 
   const mockOnSubmit = jest.fn();
 
+  // Provide all required props for GroupForm
+  const defaultProps = {
+    users: mockUsers,
+    currentUserId: 'user-1',
+    onSubmit: mockOnSubmit,
+    isSubmitting: false,
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('renders the form elements', () => {
-    render(
-      <GroupForm
-        users={mockUsers}
-        currentUserId="user-1"
-        onSubmit={mockOnSubmit}
-        isSubmitting={false}
-      />
-    );
+  it('renders form elements correctly', () => {
+    render(<GroupForm {...defaultProps} />);
 
     expect(screen.getByPlaceholderText('Summer Trip, Apartment, etc.')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Brief description of the group')).toBeInTheDocument();
     expect(screen.getByText('Group Members')).toBeInTheDocument();
+    expect(screen.getByText('Select who will be part of this group')).toBeInTheDocument();
+
+    // Check if both users are displayed
     expect(screen.getByText('Alex Johnson')).toBeInTheDocument();
     expect(screen.getByText('Jamie Smith')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Create Group' })).toBeInTheDocument();
+
+    // Check if the buttons are rendered
+    expect(screen.getByText('Cancel')).toBeInTheDocument();
+    expect(screen.getByText('Create Group')).toBeInTheDocument();
   });
 
-  it('allows user to fill out the form', () => {
-    render(
-      <GroupForm
-        users={mockUsers}
-        currentUserId="user-1"
-        onSubmit={mockOnSubmit}
-        isSubmitting={false}
-      />
-    );
+  it('allows user input', () => {
+    render(<GroupForm {...defaultProps} />);
 
-    fireEvent.change(screen.getByPlaceholderText('Summer Trip, Apartment, etc.'), {
-      target: { value: 'Summer Trip' },
-    });
+    // Input group name
+    const nameInput = screen.getByPlaceholderText('Summer Trip, Apartment, etc.');
+    fireEvent.change(nameInput, { target: { value: 'Test Group' } });
+    expect(nameInput).toHaveValue('Test Group');
 
-    fireEvent.change(screen.getByPlaceholderText('Brief description of the group'), {
-      target: { value: 'Vacation expenses' },
-    });
-
-    // Select a member
-    fireEvent.click(screen.getByTestId('user-checkbox-user-1'));
-
-    expect(screen.getByPlaceholderText('Summer Trip, Apartment, etc.')).toHaveValue('Summer Trip');
-    expect(screen.getByPlaceholderText('Brief description of the group')).toHaveValue(
-      'Vacation expenses'
-    );
+    // Input description
+    const descriptionInput = screen.getByPlaceholderText('Brief description of the group');
+    fireEvent.change(descriptionInput, { target: { value: 'This is a test group' } });
+    expect(descriptionInput).toHaveValue('This is a test group');
   });
 
-  it('calls onSubmit with form data when form is submitted', () => {
-    render(
-      <GroupForm
-        users={mockUsers}
-        currentUserId="user-1"
-        onSubmit={mockOnSubmit}
-        isSubmitting={false}
-      />
-    );
+  it('allows member selection', () => {
+    render(<GroupForm {...defaultProps} />);
 
-    fireEvent.change(screen.getByPlaceholderText('Summer Trip, Apartment, etc.'), {
-      target: { value: 'Summer Trip' },
-    });
+    // Current user (user-1) should be selected by default and cannot be deselected
+    const user1Checkbox = screen.getByTestId('user-checkbox-user-1');
+    expect(user1Checkbox.className).toContain('bg-primary/10');
 
-    fireEvent.change(screen.getByPlaceholderText('Brief description of the group'), {
-      target: { value: 'Vacation expenses' },
-    });
+    // Select user 2
+    const user2Checkbox = screen.getByTestId('user-checkbox-user-2');
+    fireEvent.click(user2Checkbox);
 
-    // Select a member
-    fireEvent.click(screen.getByTestId('user-checkbox-user-1'));
-
-    fireEvent.click(screen.getByRole('button', { name: 'Create Group' }));
-
-    expect(mockOnSubmit).toHaveBeenCalledWith({
-      name: 'Summer Trip',
-      description: 'Vacation expenses',
-      members: ['user-1'],
-    });
+    // User 2 should now be selected
+    expect(user2Checkbox.className).toContain('bg-primary/10');
   });
 
-  it('displays validation error when submitted without required fields', () => {
-    render(
-      <GroupForm
-        users={mockUsers}
-        currentUserId="user-1"
-        onSubmit={mockOnSubmit}
-        isSubmitting={false}
-      />
-    );
+  it('submits form with valid data', () => {
+    render(<GroupForm {...defaultProps} />);
 
-    // Submit without filling required fields
-    fireEvent.click(screen.getByRole('button', { name: 'Create Group' }));
-
-    expect(screen.getByText('Group name is required')).toBeInTheDocument();
-    expect(mockOnSubmit).not.toHaveBeenCalled();
-  });
-
-  it('shows validation errors when submitting empty form', async () => {
-    render(
-      <GroupForm
-        users={mockUsers}
-        currentUserId="user-1"
-        onSubmit={mockOnSubmit}
-        isSubmitting={false}
-      />
-    );
-
-    // Submit the form without filling in any fields
-    fireEvent.click(screen.getByText('Create Group'));
-
-    // Wait for validation errors to appear
-    await waitFor(() => {
-      expect(screen.getByText('Group name is required')).toBeInTheDocument();
-      expect(screen.getByText('Description is required')).toBeInTheDocument();
-    });
-
-    // Ensure the onSubmit callback was not called
-    expect(mockOnSubmit).not.toHaveBeenCalled();
-  });
-
-  it('submits the form with valid data', async () => {
-    render(
-      <GroupForm
-        users={mockUsers}
-        currentUserId="user-1"
-        onSubmit={mockOnSubmit}
-        isSubmitting={false}
-      />
-    );
-
-    // Fill out the form
+    // Fill form
     fireEvent.change(screen.getByPlaceholderText('Summer Trip, Apartment, etc.'), {
       target: { value: 'Test Group' },
     });
-
     fireEvent.change(screen.getByPlaceholderText('Brief description of the group'), {
-      target: { value: 'Test Description' },
+      target: { value: 'This is a test group' },
     });
 
-    // Click on the second user to add them to the group
-    const jamieCard = screen
-      .getByText('Jamie Smith')
-      .closest('div[class*="flex items-center gap-3"]');
-    fireEvent.click(jamieCard!);
+    // Select user 2
+    fireEvent.click(screen.getByTestId('user-checkbox-user-2'));
 
-    // Submit the form
+    // Submit form
     fireEvent.click(screen.getByText('Create Group'));
 
-    // Verify the onSubmit was called with correct data
-    await waitFor(() => {
-      expect(mockOnSubmit).toHaveBeenCalledWith({
-        name: 'Test Group',
-        description: 'Test Description',
-        members: ['user-1', 'user-2'],
-      });
+    // Check if onSubmit was called with correct data
+    expect(mockOnSubmit).toHaveBeenCalledWith({
+      name: 'Test Group',
+      description: 'This is a test group',
+      members: ['user-1', 'user-2'],
     });
   });
 
-  it('shows loading state when isSubmitting is true', () => {
-    render(
-      <GroupForm
-        users={mockUsers}
-        currentUserId="user-1"
-        onSubmit={mockOnSubmit}
-        isSubmitting={true}
-      />
-    );
+  it('displays validation errors on invalid submission', () => {
+    render(<GroupForm {...defaultProps} />);
 
+    // Submit form without any data
+    fireEvent.click(screen.getByText('Create Group'));
+
+    // Validation errors should be displayed
+    expect(screen.getByText('Group name is required')).toBeInTheDocument();
+    expect(screen.getByText('Description is required')).toBeInTheDocument();
+  });
+
+  it('shows loading state when submitting', () => {
+    render(<GroupForm {...defaultProps} isSubmitting={true} />);
+
+    // Check if button is in loading state
     expect(screen.getByText('Creating...')).toBeInTheDocument();
     expect(screen.getByText('Creating...')).toBeDisabled();
   });

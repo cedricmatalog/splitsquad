@@ -23,10 +23,17 @@ interface AppContextType {
   setGroups: (groups: Group[] | ((prev: Group[]) => Group[])) => void;
   setExpenses: (expenses: Expense[] | ((prev: Expense[]) => Expense[])) => void;
   setGroupMembers: (groupMembers: GroupMember[] | ((prev: GroupMember[]) => GroupMember[])) => void;
-  setExpenseParticipants: (expenseParticipants: ExpenseParticipant[] | ((prev: ExpenseParticipant[]) => ExpenseParticipant[])) => void;
+  setExpenseParticipants: (
+    expenseParticipants:
+      | ExpenseParticipant[]
+      | ((prev: ExpenseParticipant[]) => ExpenseParticipant[])
+  ) => void;
   setPayments: (payments: Payment[] | ((prev: Payment[]) => Payment[])) => void;
   currentUser: User | null;
   setCurrentUser: (user: User | null) => void;
+  isAuthenticated: boolean;
+  login: (email: string, password: string) => Promise<User | null>;
+  logout: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -36,7 +43,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [groups, setGroups] = useLocalStorage<Group[]>('groups', []);
   const [expenses, setExpenses] = useLocalStorage<Expense[]>('expenses', []);
   const [groupMembers, setGroupMembers] = useLocalStorage<GroupMember[]>('groupMembers', []);
-  const [expenseParticipants, setExpenseParticipants] = useLocalStorage<ExpenseParticipant[]>('expenseParticipants', []);
+  const [expenseParticipants, setExpenseParticipants] = useLocalStorage<ExpenseParticipant[]>(
+    'expenseParticipants',
+    []
+  );
   const [payments, setPayments] = useLocalStorage<Payment[]>('payments', []);
   const [currentUser, setCurrentUser] = useLocalStorage<User | null>('currentUser', null);
 
@@ -60,11 +70,34 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (payments.length === 0) {
       setPayments(paymentsData);
     }
-    if (!currentUser && usersData.length > 0) {
-      setCurrentUser(usersData[0]);
-    }
+
+    // Don't automatically set current user, let them log in first
     // eslint-disable-next-line react-hooks/exhaustive-deps
-}, []);
+  }, []);
+
+  // Password validation (in a real app, you would use proper hashing)
+  // For demo purposes, we use a simple scheme where all users have password "password123"
+  const validatePassword = (user: User, password: string): boolean => {
+    // In a real app, you would hash the password and compare it
+    return password === 'password123';
+  };
+
+  // Login function
+  const login = async (email: string, password: string): Promise<User | null> => {
+    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+
+    if (user && validatePassword(user, password)) {
+      setCurrentUser(user);
+      return user;
+    }
+
+    return null;
+  };
+
+  // Logout function
+  const logout = () => {
+    setCurrentUser(null);
+  };
 
   return (
     <AppContext.Provider
@@ -83,6 +116,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setPayments,
         currentUser,
         setCurrentUser,
+        isAuthenticated: !!currentUser,
+        login,
+        logout,
       }}
     >
       {children}
@@ -96,4 +132,4 @@ export function useAppContext() {
     throw new Error('useAppContext must be used within an AppProvider');
   }
   return context;
-} 
+}
