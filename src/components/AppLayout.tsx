@@ -73,7 +73,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50 content-shift-free">
+    <div className="min-h-screen flex flex-col  content-shift-free">
       <header className="border-b bg-white shadow-sm sticky top-0 z-10 h-16 force-gpu">
         <div className="container mx-auto px-4 h-full flex justify-between items-center">
           <div className="flex items-center gap-8">

@@ -3,6 +3,13 @@
 import { useAppContext } from '@/context/AppContext';
 import { format } from 'date-fns';
 
+/**
+ * Renders the header section for the dashboard.
+ *
+ * Displays a welcome message to the current user (fetched from AppContext)
+ * and the current time.
+ * Includes a brief description of the application's purpose.
+ */
 export function DashboardHeader() {
   const { currentUser } = useAppContext();
   const now = new Date();

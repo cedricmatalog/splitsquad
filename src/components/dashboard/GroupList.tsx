@@ -14,10 +14,23 @@ import {
 import { Users, Calendar, ArrowRight, PlusCircle } from 'lucide-react';
 
 interface GroupListProps {
+  /** An array of Group objects to display. */
   groups: Group[];
+  /** Optional limit for the number of groups to display. */
   limit?: number;
 }
 
+/**
+ * Renders a list of group cards.
+ *
+ * Displays group information in Card components.
+ * Handles horizontal scrolling on mobile viewports and grid layout on larger screens.
+ * Shows a "Create New Group" card at the end of the list.
+ *
+ * @param {GroupListProps} props - The component props.
+ * @param {Group[]} props.groups - An array of Group objects to display.
+ * @param {number} [props.limit] - Optional limit for the number of groups to display.
+ */
 export function GroupList({ groups, limit }: GroupListProps) {
   const displayGroups = limit ? groups.slice(0, limit) : groups;
 
@@ -60,7 +73,7 @@ export function GroupList({ groups, limit }: GroupListProps) {
                 </span>
               </div>
             </CardContent>
-            <CardFooter className="pt-3 pb-3 border-t bg-gray-50 mt-auto">
+            <CardFooter className="pt-3 pb-3 border-t  mt-auto">
               <Button
                 asChild
                 variant="ghost"

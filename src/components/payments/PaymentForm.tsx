@@ -12,7 +12,7 @@ import { PaymentConfirmation } from './PaymentConfirmation';
 
 interface PaymentFormProps {
   groupId: string;
-  fromUserId?: string; 
+  fromUserId?: string;
   toUserId?: string;
   suggestedAmount?: number;
   onSuccess?: () => void;
@@ -20,12 +20,12 @@ interface PaymentFormProps {
 
 type PaymentMethod = 'cash' | 'bank_transfer' | 'credit_card' | 'other';
 
-export function PaymentForm({ 
-  groupId, 
-  fromUserId, 
-  toUserId, 
-  suggestedAmount = 0, 
-  onSuccess 
+export function PaymentForm({
+  groupId,
+  fromUserId,
+  toUserId,
+  suggestedAmount = 0,
+  onSuccess,
 }: PaymentFormProps) {
   const router = useRouter();
   const { users, currentUser, setPayments } = useAppContext();
@@ -42,7 +42,7 @@ export function PaymentForm({
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-    
+
     if (!amount || amount <= 0) {
       newErrors.amount = 'Please enter a valid amount';
     }
@@ -69,13 +69,13 @@ export function PaymentForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
 
     setIsSubmitting(true);
-    
+
     // Create new payment object
     const newPayment: Payment = {
       id: `payment-${nanoid(6)}`,
@@ -83,17 +83,17 @@ export function PaymentForm({
       toUser,
       amount,
       date: date.toISOString(),
-      groupId
+      groupId,
     };
 
     // Save to context/storage
     setPayments(prevPayments => [...prevPayments, newPayment]);
-    
+
     setIsSubmitting(false);
-    
+
     // Show confirmation
     setSubmittedPayment(newPayment);
-    
+
     // Callback if provided
     if (onSuccess) {
       onSuccess();
@@ -114,7 +114,7 @@ export function PaymentForm({
   const getUserById = (userId: string): User | undefined => {
     return users.find(user => user.id === userId);
   };
-  
+
   const formatAmount = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -127,8 +127,8 @@ export function PaymentForm({
   // If payment was successfully submitted, show confirmation
   if (submittedPayment) {
     return (
-      <PaymentConfirmation 
-        payment={submittedPayment} 
+      <PaymentConfirmation
+        payment={submittedPayment}
         onDismiss={() => {
           resetForm();
           // If no onSuccess was provided, navigate to the group page
@@ -208,11 +208,7 @@ export function PaymentForm({
             {/* Date */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Date</label>
-              <DatePicker
-                value={date}
-                onChange={setDate}
-                placeholder="Select payment date"
-              />
+              <DatePicker value={date} onChange={setDate} placeholder="Select payment date" />
               {errors.date && <p className="text-sm text-red-500">{errors.date}</p>}
             </div>
 
@@ -245,7 +241,7 @@ export function PaymentForm({
 
           {/* Summary */}
           {fromUser && toUser && amount > 0 && (
-            <div className="bg-gray-50 p-4 rounded-md">
+            <div className=" p-4 rounded-md">
               <h4 className="font-medium text-sm mb-2">Payment Summary</h4>
               <p className="text-sm">
                 {getUserById(fromUser)?.name} will pay {formatAmount(amount)} to{' '}
@@ -271,4 +267,4 @@ export function PaymentForm({
       </CardContent>
     </Card>
   );
-} 
+}

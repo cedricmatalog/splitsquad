@@ -105,7 +105,7 @@ export default function Groups() {
                     </div>
                   </div>
                 </CardContent>
-                <CardFooter className="pt-0 border-t bg-gray-50">
+                <CardFooter className="pt-0 border-t ">
                   <Button
                     asChild
                     variant="ghost"

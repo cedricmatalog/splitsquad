@@ -161,7 +161,7 @@ function LoginWithSearchParams() {
             </button>
 
             {showDebugInfo && (
-              <div className="mt-2 text-left p-3 bg-gray-50 rounded text-xs">
+              <div className="mt-2 text-left p-3  rounded text-xs">
                 <p>For testing with seeded users:</p>
                 <ul className="list-disc pl-5 mt-1">
                   <li>Email: any email from users.json</li>

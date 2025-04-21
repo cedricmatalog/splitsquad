@@ -1,12 +1,6 @@
 'use client';
 
-import { 
-  Card, 
-  CardContent, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle } from 'lucide-react';
 import Link from 'next/link';
@@ -52,7 +46,7 @@ export function PaymentConfirmation({ payment, onDismiss }: PaymentConfirmationP
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          <div className="bg-gray-50 p-4 rounded-md">
+          <div className=" p-4 rounded-md">
             <div className="grid grid-cols-2 gap-4">
               <div className="text-sm text-gray-500">From</div>
               <div className="text-sm font-medium">{fromUser?.name}</div>
@@ -67,7 +61,7 @@ export function PaymentConfirmation({ payment, onDismiss }: PaymentConfirmationP
               <div className="text-sm font-medium">{formatDate(payment.date)}</div>
             </div>
           </div>
-          
+
           <p className="text-sm text-gray-500 text-center">
             This payment has been recorded and balances have been updated.
           </p>
@@ -78,11 +72,9 @@ export function PaymentConfirmation({ payment, onDismiss }: PaymentConfirmationP
           Close
         </Button>
         <Button asChild>
-          <Link href={`/groups/${payment.groupId}/payments`}>
-            View All Payments
-          </Link>
+          <Link href={`/groups/${payment.groupId}/payments`}>View All Payments</Link>
         </Button>
       </CardFooter>
     </Card>
   );
-} 
+}

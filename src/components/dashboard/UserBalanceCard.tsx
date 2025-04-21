@@ -7,6 +7,14 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useAppContext } from '@/context/AppContext';
 
+/**
+ * Displays a card showing the current user's net balance.
+ *
+ * Calculates the total amount owed to the user and the total amount the user owes
+ * using the `useExpenseCalculations` hook and data from `AppContext`.
+ * Shows the net balance with appropriate styling (green for positive, red for negative, blue for zero).
+ * Provides a link to the payments page if the balance is non-zero.
+ */
 export function UserBalanceCard() {
   const { calculateTotalOwedToUser, calculateTotalUserOwes } = useExpenseCalculations();
   const { currentUser } = useAppContext();
@@ -60,7 +68,7 @@ export function UserBalanceCard() {
 
   return (
     <Card className="border border-gray-200 hover:shadow-md transition-shadow sm:col-span-2 lg:col-span-1 flex flex-col rounded-lg overflow-hidden">
-      <CardHeader className="pb-3 pt-3 bg-gray-50">
+      <CardHeader className="pb-3 pt-3 ">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm font-medium text-gray-700 flex items-center gap-2 truncate">
             <DollarSign size={16} className="text-blue-600 flex-shrink-0" />

@@ -109,7 +109,7 @@ export function GroupForm({ users, currentUserId, onSubmit, isSubmitting }: Grou
                   data-testid={`user-checkbox-${user.id}`}
                   className={`
                     flex items-center gap-3 p-3 rounded-lg border cursor-pointer
-                    ${isSelected ? 'bg-primary/10 border-primary' : 'hover:bg-gray-50'}
+                    ${isSelected ? 'bg-primary/10 border-primary' : 'hover:'}
                     ${isCurrentUser ? 'opacity-70' : ''}
                   `}
                   onClick={() => toggleMember(user.id)}
