@@ -62,7 +62,7 @@
     "{src,__tests__}/**/*.{js,jsx,ts,tsx}": [
       "eslint --fix",
       "prettier --write",
-      "jest --passWithNoTests --testPathIgnorePatterns \"__tests__/groups/NewGroupPage.test.tsx\""
+      "jest --passWithNoTests"
     ],
     "*.json": [
       "prettier --write"
