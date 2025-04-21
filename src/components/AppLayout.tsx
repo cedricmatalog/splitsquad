@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAppContext } from '@/context/AppContext';
@@ -14,14 +14,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Menu, X, LayoutDashboard, Users, DollarSign, ChevronRight } from 'lucide-react';
 
 interface NavItemProps {
   href: string;
   children: ReactNode;
   isActive: boolean;
+  icon?: ReactNode;
 }
 
-function NavItem({ href, children, isActive }: NavItemProps) {
+function NavItem({ href, children, isActive, icon }: NavItemProps) {
   return (
     <Link
       href={href}
@@ -31,6 +33,7 @@ function NavItem({ href, children, isActive }: NavItemProps) {
           : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
       }`}
     >
+      {icon && <span className="mr-2">{icon}</span>}
       {children}
     </Link>
   );
@@ -44,6 +47,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { currentUser, logout } = useAppContext();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Skip layout on landing page
   if (pathname === '/') {
@@ -62,6 +66,10 @@ export function AppLayout({ children }: AppLayoutProps) {
     } catch (error) {
       console.error('Error signing out:', error);
     }
+  };
+
+  const toggleMobileMenu = () => {
+    setMobileMenuOpen(!mobileMenuOpen);
   };
 
   return (
@@ -92,67 +100,198 @@ export function AppLayout({ children }: AppLayoutProps) {
               <span>SplitSquad</span>
             </Link>
 
+            {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center gap-2">
-              <NavItem href="/dashboard" isActive={pathname === '/dashboard'}>
+              <NavItem
+                href="/dashboard"
+                isActive={pathname === '/dashboard'}
+                icon={<LayoutDashboard size={16} />}
+              >
                 Dashboard
               </NavItem>
               <NavItem
                 href="/groups"
                 isActive={pathname === '/groups' || pathname.startsWith('/groups/')}
+                icon={<Users size={16} />}
               >
                 Groups
               </NavItem>
               <NavItem
                 href="/expenses"
                 isActive={pathname === '/expenses' || pathname.startsWith('/expenses/')}
+                icon={<DollarSign size={16} />}
               >
                 Expenses
               </NavItem>
             </nav>
           </div>
 
+          <div className="flex items-center gap-2">
+            {/* Mobile menu button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden"
+              onClick={toggleMobileMenu}
+              aria-label="Toggle menu"
+            >
+              <Menu size={24} />
+            </Button>
+
+            {currentUser && (
+              <div className="flex items-center">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className="relative h-10 w-10 rounded-full overflow-hidden ring-2 ring-primary/5 hover:ring-primary/20 transition-all"
+                    >
+                      <Avatar>
+                        <AvatarImage src={currentUser.avatar} alt={currentUser.name} />
+                        <AvatarFallback className="bg-primary/10 text-primary font-medium">
+                          {currentUser.name.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                    <DropdownMenuItem disabled className="opacity-70">
+                      {currentUser.name}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem disabled className="opacity-70 text-xs">
+                      {currentUser.email}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="/settings" className="cursor-pointer">
+                        Settings
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={handleSignOut}
+                      className="cursor-pointer text-red-600 hover:text-red-700 focus:text-red-700"
+                    >
+                      Sign out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* Mobile Navigation Drawer */}
+      <div
+        className={`fixed inset-0 bg-gray-800 bg-opacity-50 z-40 md:hidden transition-opacity duration-300 ${
+          mobileMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
+        onClick={toggleMobileMenu}
+      ></div>
+
+      <div
+        className={`fixed top-0 right-0 h-full w-3/4 max-w-xs bg-white z-50 shadow-xl transform transition-transform duration-300 ease-in-out ${
+          mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
+        } md:hidden`}
+      >
+        <div className="flex flex-col h-full">
+          <div className="p-4 border-b flex justify-between items-center">
+            <h2 className="text-lg font-bold">Menu</h2>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleMobileMenu}
+              className="rounded-full"
+              aria-label="Close menu"
+            >
+              <X size={20} />
+            </Button>
+          </div>
+
+          <nav className="flex-1 overflow-y-auto py-4">
+            <div className="space-y-1 px-2">
+              <Link
+                href="/dashboard"
+                className={`flex items-center px-4 py-3 rounded-md transition-all ${
+                  pathname === '/dashboard'
+                    ? 'bg-primary/10 text-primary font-medium'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+                onClick={toggleMobileMenu}
+              >
+                <LayoutDashboard size={20} className="mr-3" />
+                <span>Dashboard</span>
+                <ChevronRight size={16} className="ml-auto" />
+              </Link>
+
+              <Link
+                href="/groups"
+                className={`flex items-center px-4 py-3 rounded-md transition-all ${
+                  pathname === '/groups' || pathname.startsWith('/groups/')
+                    ? 'bg-primary/10 text-primary font-medium'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+                onClick={toggleMobileMenu}
+              >
+                <Users size={20} className="mr-3" />
+                <span>Groups</span>
+                <ChevronRight size={16} className="ml-auto" />
+              </Link>
+
+              <Link
+                href="/expenses"
+                className={`flex items-center px-4 py-3 rounded-md transition-all ${
+                  pathname === '/expenses' || pathname.startsWith('/expenses/')
+                    ? 'bg-primary/10 text-primary font-medium'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+                onClick={toggleMobileMenu}
+              >
+                <DollarSign size={20} className="mr-3" />
+                <span>Expenses</span>
+                <ChevronRight size={16} className="ml-auto" />
+              </Link>
+            </div>
+          </nav>
+
           {currentUser && (
-            <div className="flex items-center gap-4">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    className="relative h-10 w-10 rounded-full overflow-hidden ring-2 ring-primary/5 hover:ring-primary/20 transition-all"
-                  >
-                    <Avatar>
-                      <AvatarImage src={currentUser.avatar} alt={currentUser.name} />
-                      <AvatarFallback className="bg-primary/10 text-primary font-medium">
-                        {currentUser.name.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                  <DropdownMenuItem disabled className="opacity-70">
-                    {currentUser.name}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem disabled className="opacity-70 text-xs">
-                    {currentUser.email}
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href="/settings" className="cursor-pointer">
-                      Settings
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={handleSignOut}
-                    className="cursor-pointer text-red-600 hover:text-red-700 focus:text-red-700"
-                  >
-                    Sign out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+            <div className="border-t p-4">
+              <div className="flex items-center gap-3 mb-4">
+                <Avatar className="h-10 w-10 border-2 border-primary/10">
+                  <AvatarImage src={currentUser.avatar} alt={currentUser.name} />
+                  <AvatarFallback className="bg-primary/10 text-primary">
+                    {currentUser.name.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-medium">{currentUser.name}</p>
+                  <p className="text-xs text-gray-500">{currentUser.email}</p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Button variant="outline" size="sm" className="w-full justify-start" asChild>
+                  <Link href="/settings" onClick={toggleMobileMenu}>
+                    Settings
+                  </Link>
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="w-full justify-start"
+                  onClick={() => {
+                    handleSignOut();
+                    toggleMobileMenu();
+                  }}
+                >
+                  Sign Out
+                </Button>
+              </div>
             </div>
           )}
         </div>
-      </header>
+      </div>
 
       <main className="flex-1 pb-10">{children}</main>
 

@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { PlusCircle, Users, Clock } from 'lucide-react';
+import { PlusCircle, Users, Clock, ArrowRight } from 'lucide-react';
 
 export default function Dashboard() {
   const { groups, expenses, isAuthenticated, isLoading } = useAppContext();
@@ -39,10 +39,11 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-6xl">
+    <div className="container mx-auto pt-4 pb-8 px-4 sm:px-6 sm:pt-6 max-w-6xl">
       <DashboardHeader />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+      {/* Main stats cards - stacked on mobile, grid on larger screens */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8 sm:mb-10">
         <UserBalanceCard />
 
         <Card className="overflow-hidden border border-gray-200 hover:shadow-md transition-shadow">
@@ -58,29 +59,33 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="overflow-hidden border border-gray-200 hover:shadow-md transition-shadow">
+        {/* Quick actions card - full width on mobile for easy tapping */}
+        <Card className="overflow-hidden border border-gray-200 hover:shadow-md transition-shadow sm:col-span-2 lg:col-span-1">
           <CardHeader className="pb-2 bg-gray-50 border-b">
             <CardTitle className="text-sm font-medium text-gray-500 flex items-center gap-2">
               <PlusCircle size={16} className="text-primary" />
               Quick Actions
             </CardTitle>
           </CardHeader>
-          <CardContent className="pt-4 space-y-2">
-            <Button className="w-full" size="sm" asChild>
-              <Link href="/expenses/new" className="gap-2">
-                <PlusCircle size={14} />
-                Add Expense
-              </Link>
-            </Button>
-            <Button className="w-full" variant="outline" size="sm" asChild>
-              <Link href="/groups/new" className="gap-2">
-                <Users size={14} />
-                Create Group
-              </Link>
-            </Button>
+          <CardContent className="pt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <Button className="h-10 px-2 sm:px-4" asChild>
+                <Link href="/expenses/new" className="gap-2">
+                  <PlusCircle size={16} />
+                  <span>Add Expense</span>
+                </Link>
+              </Button>
+              <Button className="h-10 px-2 sm:px-4" variant="outline" asChild>
+                <Link href="/groups/new" className="gap-2">
+                  <Users size={16} />
+                  <span>Create Group</span>
+                </Link>
+              </Button>
+            </div>
           </CardContent>
         </Card>
 
+        {/* Recent activity card - display on top on mobile */}
         <Card className="overflow-hidden border border-gray-200 hover:shadow-md transition-shadow">
           <CardHeader className="pb-2 bg-gray-50 border-b">
             <CardTitle className="text-sm font-medium text-gray-500 flex items-center gap-2">
@@ -98,15 +103,38 @@ export default function Dashboard() {
         </Card>
       </div>
 
+      {/* Mobile-friendly group section with swipe indicator */}
       <div className="mb-6 flex items-center justify-between">
         <h2 className="text-xl font-semibold">Your Groups</h2>
         <Button variant="ghost" size="sm" asChild>
-          <Link href="/groups" className="text-primary hover:text-primary/90">
+          <Link
+            href="/groups"
+            className="text-primary hover:text-primary/90 flex items-center gap-1"
+          >
             View all
+            <ArrowRight size={14} />
           </Link>
         </Button>
       </div>
+
+      {/* Add scroll indicator for mobile */}
+      <div className="md:hidden mb-4 text-xs text-gray-500 flex items-center justify-center">
+        <div className="w-10 h-1 bg-gray-200 rounded-full mx-1"></div>
+        <span>Scroll horizontally to see more</span>
+        <div className="w-10 h-1 bg-gray-200 rounded-full mx-1"></div>
+      </div>
+
+      {/* Adjust GroupList component to handle horizontal scrolling on mobile */}
       <GroupList groups={groups} limit={4} />
+
+      {/* Mobile floating action button for quick expense creation */}
+      <div className="fixed right-4 bottom-20 md:hidden">
+        <Button size="lg" className="h-14 w-14 rounded-full shadow-lg" asChild>
+          <Link href="/expenses/new" aria-label="Add new expense">
+            <PlusCircle size={24} />
+          </Link>
+        </Button>
+      </div>
     </div>
   );
 }
