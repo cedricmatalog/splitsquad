@@ -7,12 +7,7 @@ import useExpenseCalculations from '@/hooks/useExpenseCalculations';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { 
-  Tabs, 
-  TabsContent, 
-  TabsList, 
-  TabsTrigger 
-} from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog,
   DialogContent,
@@ -27,28 +22,24 @@ import { ExpenseList } from '@/components/expenses/ExpenseList';
 
 export default function GroupDetails({ params }: { params: Promise<{ id: string }> }) {
   const { id: groupId } = use(params);
-  const { 
-    groups, 
+  const {
+    groups,
     users,
-    groupMembers: allGroupMembers, 
-    setGroupMembers, 
-    currentUser 
+    groupMembers: allGroupMembers,
+    setGroupMembers,
+    currentUser,
   } = useAppContext();
-  const { 
-    getGroupExpenses, 
-    getGroupMembers, 
-    calculateGroupBalances,
-    calculateSimplifiedPayments
-  } = useExpenseCalculations();
-  
+  const { getGroupExpenses, getGroupMembers, calculateGroupBalances, calculateSimplifiedPayments } =
+    useExpenseCalculations();
+
   const [activeTab, setActiveTab] = useState('expenses');
   const [membersDialogOpen, setMembersDialogOpen] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
   const shareUrlRef = useRef<HTMLInputElement>(null);
-  
+
   const group = groups.find(g => g.id === groupId);
-  
+
   if (!group) {
     return (
       <div className="container mx-auto py-8 max-w-6xl text-center">
@@ -60,85 +51,87 @@ export default function GroupDetails({ params }: { params: Promise<{ id: string 
       </div>
     );
   }
-  
+
   const groupExpenses = getGroupExpenses(groupId);
   const groupMembers = getGroupMembers(groupId);
-  
+
   // Check if current user is a member of this group
-  const isUserMember = currentUser ? allGroupMembers.some(member => 
-    member.userId === currentUser.id && member.groupId === groupId
-  ) : false;
-  
+  const isUserMember = currentUser
+    ? allGroupMembers.some(member => member.userId === currentUser.id && member.groupId === groupId)
+    : false;
+
   const balances = calculateGroupBalances(groupId);
   const simplifiedPayments = calculateSimplifiedPayments(groupId);
-  
+
   const getCreatorName = (creatorId: string) => {
     const creator = users.find(user => user.id === creatorId);
     return creator ? creator.name : 'Unknown';
   };
-  
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     });
   };
-  
+
   const formatAmount = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD'
+      currency: 'USD',
     }).format(amount);
   };
-  
+
   const handleJoinGroup = () => {
     if (!currentUser) return;
-    
+
     const newMember: GroupMember = {
       userId: currentUser.id,
-      groupId: groupId
+      groupId: groupId,
     };
-    
+
     setGroupMembers(prev => [...prev, newMember]);
   };
-  
+
   const handleLeaveGroup = () => {
     if (!currentUser) return;
-    
-    setGroupMembers(prev => 
+
+    setGroupMembers(prev =>
       prev.filter(member => !(member.userId === currentUser.id && member.groupId === groupId))
     );
   };
-  
+
   const handleCopyShareLink = () => {
     if (shareUrlRef.current) {
       shareUrlRef.current.select();
       document.execCommand('copy');
       setCopySuccess(true);
-      
+
       // Reset the success message after 2 seconds
       setTimeout(() => {
         setCopySuccess(false);
       }, 2000);
     }
   };
-  
+
   return (
     <div className="container mx-auto py-8 max-w-6xl">
       <div className="mb-8">
         <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
-          <Link href="/groups" className="hover:underline">Groups</Link>
+          <Link href="/groups" className="hover:underline">
+            Groups
+          </Link>
           <span>/</span>
           <span>{group.name}</span>
         </div>
-        
+
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1 className="text-3xl font-bold mb-2">{group.name}</h1>
             <p className="text-gray-500">{group.description}</p>
           </div>
-          
+
           <div className="flex flex-wrap gap-2">
             {isUserMember ? (
               <>
@@ -171,14 +164,12 @@ export default function GroupDetails({ params }: { params: Promise<{ id: string 
                 </Button>
               </>
             ) : (
-              <Button onClick={handleJoinGroup}>
-                Join Group
-              </Button>
+              <Button onClick={handleJoinGroup}>Join Group</Button>
             )}
           </div>
         </div>
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <Card>
           <CardHeader className="pb-2">
@@ -191,21 +182,19 @@ export default function GroupDetails({ params }: { params: Promise<{ id: string 
             <span>{getCreatorName(group.createdBy)}</span>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-gray-500">Date Created</CardTitle>
           </CardHeader>
-          <CardContent>
-            {formatDate(group.date)}
-          </CardContent>
+          <CardContent>{formatDate(group.date)}</CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="pb-2 flex flex-row items-center justify-between">
             <CardTitle className="text-sm font-medium text-gray-500">Members</CardTitle>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="sm"
               className="text-xs h-6 px-2"
               onClick={() => setMembersDialogOpen(true)}
@@ -215,7 +204,7 @@ export default function GroupDetails({ params }: { params: Promise<{ id: string 
           </CardHeader>
           <CardContent>
             <div className="flex -space-x-2">
-              {groupMembers.slice(0, 5).map((member) => (
+              {groupMembers.slice(0, 5).map(member => (
                 <Avatar key={member.id} className="border-2 border-white">
                   <AvatarImage src={member.avatar} alt={member.name} />
                   <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
@@ -230,7 +219,7 @@ export default function GroupDetails({ params }: { params: Promise<{ id: string 
           </CardContent>
         </Card>
       </div>
-      
+
       {isUserMember ? (
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
           <TabsList className="mb-6">
@@ -239,25 +228,23 @@ export default function GroupDetails({ params }: { params: Promise<{ id: string 
             <TabsTrigger value="settlements">Settlements</TabsTrigger>
             <TabsTrigger value="members">Members</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="expenses">
             <ExpenseList expenses={groupExpenses} groupId={groupId} showGroupColumn={false} />
           </TabsContent>
-          
+
           <TabsContent value="balances">
             <Card>
               <CardHeader>
                 <CardTitle>Current Balances</CardTitle>
-                <CardDescription>
-                  See who owes what in this group
-                </CardDescription>
+                <CardDescription>See who owes what in this group</CardDescription>
               </CardHeader>
               <CardContent>
                 {balances.length > 0 ? (
                   <div className="space-y-4">
-                    {balances.map((balance) => (
-                      <div 
-                        key={balance.userId} 
+                    {balances.map(balance => (
+                      <div
+                        key={balance.userId}
                         className="flex items-center justify-between py-2 border-b last:border-0"
                       >
                         <div className="flex items-center gap-3">
@@ -266,18 +253,18 @@ export default function GroupDetails({ params }: { params: Promise<{ id: string 
                           </Avatar>
                           <span>{balance.userName}</span>
                         </div>
-                        <div 
+                        <div
                           className={`font-semibold ${
-                            balance.amount > 0 
-                              ? 'text-green-600' 
-                              : balance.amount < 0 
-                                ? 'text-red-600' 
+                            balance.amount > 0
+                              ? 'text-green-600'
+                              : balance.amount < 0
+                                ? 'text-red-600'
                                 : ''
                           }`}
                         >
-                          {balance.amount > 0 
-                            ? `Gets back ${formatAmount(balance.amount)}` 
-                            : balance.amount < 0 
+                          {balance.amount > 0
+                            ? `Gets back ${formatAmount(balance.amount)}`
+                            : balance.amount < 0
                               ? `Owes ${formatAmount(Math.abs(balance.amount))}`
                               : 'Settled up'}
                         </div>
@@ -292,21 +279,19 @@ export default function GroupDetails({ params }: { params: Promise<{ id: string 
               </CardContent>
             </Card>
           </TabsContent>
-          
+
           <TabsContent value="settlements">
             <Card>
               <CardHeader>
                 <CardTitle>Suggested Settlements</CardTitle>
-                <CardDescription>
-                  Simplified payments to settle all debts
-                </CardDescription>
+                <CardDescription>Simplified payments to settle all debts</CardDescription>
               </CardHeader>
               <CardContent>
                 {simplifiedPayments.length > 0 ? (
                   <div className="space-y-4">
                     {simplifiedPayments.map((payment, index) => (
-                      <div 
-                        key={index} 
+                      <div
+                        key={index}
                         className="flex items-center justify-between py-2 border-b last:border-0"
                       >
                         <div className="flex-1">
@@ -371,20 +356,18 @@ export default function GroupDetails({ params }: { params: Promise<{ id: string 
               </CardContent>
             </Card>
           </TabsContent>
-          
+
           <TabsContent value="members">
             <Card>
               <CardHeader>
                 <CardTitle>Group Members</CardTitle>
-                <CardDescription>
-                  People participating in this group
-                </CardDescription>
+                <CardDescription>People participating in this group</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {groupMembers.map((member) => (
-                    <div 
-                      key={member.id} 
+                  {groupMembers.map(member => (
+                    <div
+                      key={member.id}
                       className="flex items-center justify-between py-2 border-b last:border-0"
                     >
                       <div className="flex items-center gap-3">
@@ -397,13 +380,15 @@ export default function GroupDetails({ params }: { params: Promise<{ id: string 
                           <p className="text-sm text-gray-500">{member.email}</p>
                         </div>
                       </div>
-                      
-                      {currentUser && currentUser.id === member.id && member.id !== group.createdBy && (
-                        <Button variant="outline" size="sm" onClick={handleLeaveGroup}>
-                          Leave Group
-                        </Button>
-                      )}
-                      
+
+                      {currentUser &&
+                        currentUser.id === member.id &&
+                        member.id !== group.createdBy && (
+                          <Button variant="outline" size="sm" onClick={handleLeaveGroup}>
+                            Leave Group
+                          </Button>
+                        )}
+
                       {member.id === group.createdBy && (
                         <div className="text-sm text-gray-500 italic">Group Admin</div>
                       )}
@@ -418,9 +403,7 @@ export default function GroupDetails({ params }: { params: Promise<{ id: string 
         <Card className="mb-8">
           <CardHeader>
             <CardTitle>Join This Group</CardTitle>
-            <CardDescription>
-              Join this group to see expenses and balances
-            </CardDescription>
+            <CardDescription>Join this group to see expenses and balances</CardDescription>
           </CardHeader>
           <CardContent className="text-center py-6">
             <p className="mb-4 text-gray-500">
@@ -430,21 +413,19 @@ export default function GroupDetails({ params }: { params: Promise<{ id: string 
           </CardContent>
         </Card>
       )}
-      
+
       {/* Members Dialog */}
       <Dialog open={membersDialogOpen} onOpenChange={setMembersDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Group Members</DialogTitle>
-            <DialogDescription>
-              People participating in {group.name}
-            </DialogDescription>
+            <DialogDescription>People participating in {group.name}</DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4 max-h-[60vh] overflow-y-auto">
-            {groupMembers.map((member) => (
-              <div 
-                key={member.id} 
+            {groupMembers.map(member => (
+              <div
+                key={member.id}
                 className="flex items-center justify-between py-2 border-b last:border-0"
               >
                 <div className="flex items-center gap-3">
@@ -457,14 +438,14 @@ export default function GroupDetails({ params }: { params: Promise<{ id: string 
                     <p className="text-sm text-gray-500">{member.email}</p>
                   </div>
                 </div>
-                
+
                 {member.id === group.createdBy && (
                   <div className="text-sm bg-gray-100 px-2 py-1 rounded">Admin</div>
                 )}
               </div>
             ))}
           </div>
-          
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setMembersDialogOpen(false)}>
               Close
@@ -472,7 +453,7 @@ export default function GroupDetails({ params }: { params: Promise<{ id: string 
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
+
       {/* Share Dialog */}
       <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
         <DialogContent>
@@ -482,39 +463,33 @@ export default function GroupDetails({ params }: { params: Promise<{ id: string 
               Share this group with friends to split expenses together
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4">
             <div className="flex flex-col space-y-2">
               <label className="text-sm font-medium">Share Link</label>
               <div className="flex space-x-2">
-                <Input 
+                <Input
                   ref={shareUrlRef}
-                  value={`https://splitsquad.example.com/invite/${groupId}`} 
+                  value={`https://splitsquad.example.com/invite/${groupId}`}
                   readOnly
                 />
-                <Button onClick={handleCopyShareLink}>
-                  {copySuccess ? 'Copied!' : 'Copy'}
-                </Button>
+                <Button onClick={handleCopyShareLink}>{copySuccess ? 'Copied!' : 'Copy'}</Button>
               </div>
               <p className="text-sm text-gray-500">
                 Share this link with friends to invite them to your group
               </p>
             </div>
-            
+
             <div className="flex flex-col space-y-2">
               <label className="text-sm font-medium">Invite via Email</label>
               <div className="flex space-x-2">
-                <Input 
-                  placeholder="email@example.com"
-                />
+                <Input placeholder="email@example.com" />
                 <Button variant="outline">Send</Button>
               </div>
-              <p className="text-sm text-gray-500">
-                Enter email addresses separated by commas
-              </p>
+              <p className="text-sm text-gray-500">Enter email addresses separated by commas</p>
             </div>
           </div>
-          
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setShareDialogOpen(false)}>
               Close
@@ -524,4 +499,4 @@ export default function GroupDetails({ params }: { params: Promise<{ id: string 
       </Dialog>
     </div>
   );
-} 
+}

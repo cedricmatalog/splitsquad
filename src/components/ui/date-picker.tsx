@@ -5,7 +5,7 @@ import { format } from 'date-fns';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { 
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -36,8 +36,18 @@ export function DatePicker({ value, onChange, placeholder = 'Select date' }: Dat
   };
 
   const monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
   ];
 
   const handlePrevMonth = () => {
@@ -67,7 +77,7 @@ export function DatePicker({ value, onChange, placeholder = 'Select date' }: Dat
 
   const daysInMonth = getDaysInMonth(year, month);
   const firstDayOfMonth = getFirstDayOfMonth(year, month);
-  
+
   // Create grid of days
   const days = [];
   for (let i = 0; i < firstDayOfMonth; i++) {
@@ -80,10 +90,7 @@ export function DatePicker({ value, onChange, placeholder = 'Select date' }: Dat
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button 
-          variant="outline" 
-          className="w-full justify-start text-left font-normal"
-        >
+        <Button variant="outline" className="w-full justify-start text-left font-normal">
           <CalendarIcon className="mr-2 h-4 w-4" />
           {value ? format(value, 'PPP') : placeholder}
         </Button>
@@ -104,22 +111,22 @@ export function DatePicker({ value, onChange, placeholder = 'Select date' }: Dat
               &gt;
             </Button>
           </div>
-          
+
           <div className="grid grid-cols-7 gap-1 text-center mb-2">
-            {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day) => (
+            {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
               <div key={day} className="text-sm font-medium">
                 {day}
               </div>
             ))}
           </div>
-          
+
           <div className="grid grid-cols-7 gap-1">
             {days.map((day, index) => (
               <div key={index}>
                 {day !== null ? (
-                  <Button 
-                    variant={selectedDay === day ? "default" : "outline"}
-                    className="w-full h-10" 
+                  <Button
+                    variant={selectedDay === day ? 'default' : 'outline'}
+                    className="w-full h-10"
                     onClick={() => handleDaySelect(day)}
                   >
                     {day}
@@ -130,11 +137,11 @@ export function DatePicker({ value, onChange, placeholder = 'Select date' }: Dat
               </div>
             ))}
           </div>
-          
+
           <div className="mt-4">
             <Input
               type="date"
-              onChange={(e) => {
+              onChange={e => {
                 if (e.target.value) {
                   const date = new Date(e.target.value);
                   setYear(date.getFullYear());
@@ -151,4 +158,4 @@ export function DatePicker({ value, onChange, placeholder = 'Select date' }: Dat
       </DialogContent>
     </Dialog>
   );
-} 
+}

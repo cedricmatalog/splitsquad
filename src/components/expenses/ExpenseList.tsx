@@ -8,20 +8,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { format, isAfter, isBefore, startOfDay, endOfDay } from 'date-fns';
 
 interface ExpenseListProps {
@@ -35,62 +30,64 @@ export function ExpenseList({ expenses, groupId, showGroupColumn = true }: Expen
   const [searchTerm, setSearchTerm] = useState('');
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
-  
-  // Filter expenses based on search term and date range
-  const filteredExpenses = expenses.filter(expense => {
-    // Filter by search term
-    const searchMatches = 
-      expense.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      getUserName(expense.paidBy).toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (showGroupColumn && getGroupName(expense.groupId).toLowerCase().includes(searchTerm.toLowerCase()));
-    
-    // Filter by date range
-    let dateMatches = true;
-    const expenseDate = new Date(expense.date);
-    
-    if (startDate) {
-      dateMatches = dateMatches && isAfter(expenseDate, startOfDay(startDate));
-    }
-    
-    if (endDate) {
-      dateMatches = dateMatches && isBefore(expenseDate, endOfDay(endDate));
-    }
-    
-    return searchMatches && dateMatches;
-  });
-  
+
+  // Define helper functions before using them
   const getUserName = (userId: string) => {
     const user = users.find(user => user.id === userId);
     return user ? user.name : 'Unknown';
   };
-  
+
   const getUserAvatar = (userId: string) => {
     const user = users.find(user => user.id === userId);
     return user ? user.avatar : '';
   };
-  
+
   const getGroupName = (groupId: string) => {
     const group = groups.find(group => group.id === groupId);
     return group ? group.name : 'Unknown Group';
   };
-  
+
   const formatDate = (dateString: string) => {
     return format(new Date(dateString), 'MMM d, yyyy');
   };
-  
+
   const formatAmount = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD'
+      currency: 'USD',
     }).format(amount);
   };
-  
+
+  // Filter expenses based on search term and date range
+  const filteredExpenses = expenses.filter(expense => {
+    // Filter by search term
+    const searchMatches =
+      expense.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      getUserName(expense.paidBy).toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (showGroupColumn &&
+        getGroupName(expense.groupId).toLowerCase().includes(searchTerm.toLowerCase()));
+
+    // Filter by date range
+    let dateMatches = true;
+    const expenseDate = new Date(expense.date);
+
+    if (startDate) {
+      dateMatches = dateMatches && isAfter(expenseDate, startOfDay(startDate));
+    }
+
+    if (endDate) {
+      dateMatches = dateMatches && isBefore(expenseDate, endOfDay(endDate));
+    }
+
+    return searchMatches && dateMatches;
+  });
+
   const resetFilters = () => {
     setSearchTerm('');
     setStartDate(undefined);
     setEndDate(undefined);
   };
-  
+
   return (
     <Card>
       <CardHeader>
@@ -118,33 +115,25 @@ export function ExpenseList({ expenses, groupId, showGroupColumn = true }: Expen
             </Button>
           )}
         </CardTitle>
-        
+
         <div className="flex flex-col md:flex-row gap-3 mt-4">
           <Input
             type="text"
             placeholder="Search expenses..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={e => setSearchTerm(e.target.value)}
             className="md:w-64"
           />
-          
+
           <div className="flex gap-2 items-center">
             <div className="w-40">
-              <DatePicker
-                value={startDate}
-                onChange={setStartDate}
-                placeholder="Start date"
-              />
+              <DatePicker value={startDate} onChange={setStartDate} placeholder="Start date" />
             </div>
             <span>to</span>
             <div className="w-40">
-              <DatePicker
-                value={endDate}
-                onChange={setEndDate}
-                placeholder="End date"
-              />
+              <DatePicker value={endDate} onChange={setEndDate} placeholder="End date" />
             </div>
-            
+
             <Button variant="ghost" size="sm" onClick={resetFilters}>
               Reset
             </Button>
@@ -166,14 +155,14 @@ export function ExpenseList({ expenses, groupId, showGroupColumn = true }: Expen
             </TableHeader>
             <TableBody>
               {filteredExpenses.length > 0 ? (
-                filteredExpenses.map((expense) => (
+                filteredExpenses.map(expense => (
                   <TableRow key={expense.id}>
                     <TableCell className="font-medium">{expense.description}</TableCell>
                     <TableCell>{formatAmount(expense.amount)}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Avatar className="h-6 w-6">
-                          <AvatarImage 
+                          <AvatarImage
                             src={getUserAvatar(expense.paidBy)}
                             alt={getUserName(expense.paidBy)}
                           />
@@ -184,8 +173,8 @@ export function ExpenseList({ expenses, groupId, showGroupColumn = true }: Expen
                     </TableCell>
                     {showGroupColumn && (
                       <TableCell>
-                        <Link 
-                          href={`/groups/${expense.groupId}`} 
+                        <Link
+                          href={`/groups/${expense.groupId}`}
                           className="text-blue-600 hover:underline"
                         >
                           {getGroupName(expense.groupId)}
@@ -202,7 +191,10 @@ export function ExpenseList({ expenses, groupId, showGroupColumn = true }: Expen
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={showGroupColumn ? 6 : 5} className="text-center text-gray-500 h-24">
+                  <TableCell
+                    colSpan={showGroupColumn ? 6 : 5}
+                    className="text-center text-gray-500 h-24"
+                  >
                     No expenses found.
                   </TableCell>
                 </TableRow>
@@ -213,4 +205,4 @@ export function ExpenseList({ expenses, groupId, showGroupColumn = true }: Expen
       </CardContent>
     </Card>
   );
-} 
+}

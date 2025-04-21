@@ -4,20 +4,24 @@ import { setupMocks } from '../../utils/test-utils';
 
 // Mock the DatePicker component to avoid testing issues
 jest.mock('@/components/ui/date-picker', () => ({
-  DatePicker: ({ value, onChange, placeholder }: { 
-    value: Date | undefined; 
-    onChange: (date: Date) => void; 
-    placeholder?: string 
+  DatePicker: ({
+    value,
+    onChange,
+    placeholder,
+  }: {
+    value: Date | undefined;
+    onChange: (date: Date) => void;
+    placeholder?: string;
   }) => (
     <div data-testid="date-picker">
-      <input 
-        type="date" 
-        value={value instanceof Date ? value.toISOString().split('T')[0] : ''} 
-        onChange={(e) => onChange(new Date(e.target.value))}
-        placeholder={placeholder} 
+      <input
+        type="date"
+        value={value instanceof Date ? value.toISOString().split('T')[0] : ''}
+        onChange={e => onChange(new Date(e.target.value))}
+        placeholder={placeholder}
       />
     </div>
-  )
+  ),
 }));
 
 // Setup mocks
@@ -31,16 +35,16 @@ describe('ExpenseList', () => {
       description: 'Groceries',
       amount: 125.75,
       paidBy: 'user-1',
-      date: '2023-07-12T14:20:00Z'
+      date: '2023-07-12T14:20:00Z',
     },
     {
       id: 'expense-2',
       groupId: 'group-1',
       description: 'Dinner',
-      amount: 85.50,
+      amount: 85.5,
       paidBy: 'user-2',
-      date: '2023-07-11T19:30:00Z'
-    }
+      date: '2023-07-11T19:30:00Z',
+    },
   ];
 
   beforeEach(() => {
@@ -74,7 +78,7 @@ describe('ExpenseList', () => {
 
     // Enter a search term
     fireEvent.change(screen.getByPlaceholderText('Search expenses...'), {
-      target: { value: 'Groceries' }
+      target: { value: 'Groceries' },
     });
 
     // Check that only matching expenses are displayed
@@ -108,7 +112,7 @@ describe('ExpenseList', () => {
 
     // Enter a search term
     fireEvent.change(screen.getByPlaceholderText('Search expenses...'), {
-      target: { value: 'Groceries' }
+      target: { value: 'Groceries' },
     });
 
     // Check that only matching expenses are displayed
@@ -122,4 +126,4 @@ describe('ExpenseList', () => {
     expect(screen.getByText('Groceries')).toBeInTheDocument();
     expect(screen.getByText('Dinner')).toBeInTheDocument();
   });
-}); 
+});

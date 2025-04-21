@@ -7,7 +7,7 @@ import { ExpenseList } from '@/components/expenses/ExpenseList';
 
 export default function Expenses() {
   const { expenses } = useAppContext();
-  
+
   return (
     <div className="container mx-auto py-8 max-w-6xl">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
@@ -15,7 +15,7 @@ export default function Expenses() {
           <h1 className="text-3xl font-bold mb-2">Expenses</h1>
           <p className="text-gray-500">Manage all your expenses</p>
         </div>
-        
+
         <Button asChild>
           <Link href="/expenses/new">
             <svg
@@ -36,8 +36,8 @@ export default function Expenses() {
           </Link>
         </Button>
       </div>
-      
+
       <ExpenseList expenses={expenses} showGroupColumn={true} />
     </div>
   );
-} 
+}
