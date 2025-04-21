@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { ChevronUp, ChevronDown, CheckCircle, ArrowRight } from 'lucide-react';
+import { ChevronUp, ChevronDown, CheckCircle, ArrowRight, DollarSign } from 'lucide-react';
 import useExpenseCalculations from '@/hooks/useExpenseCalculations';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -23,6 +23,7 @@ export function UserBalanceCard() {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
+      minimumFractionDigits: 2,
     }).format(Math.abs(amount));
   };
 
@@ -30,50 +31,59 @@ export function UserBalanceCard() {
   const getStatusInfo = () => {
     if (netBalance > 0) {
       return {
-        icon: <ChevronUp className="h-5 w-5 text-green-600" />,
+        icon: <ChevronUp className="h-5 w-5" />,
         color: 'text-green-600',
+        bgColor: 'bg-green-50',
+        border: 'border-green-100',
         text: 'You are owed',
       };
     } else if (netBalance < 0) {
       return {
-        icon: <ChevronDown className="h-5 w-5 text-red-600" />,
+        icon: <ChevronDown className="h-5 w-5" />,
         color: 'text-red-600',
+        bgColor: 'bg-red-50',
+        border: 'border-red-100',
         text: 'You owe',
       };
     } else {
       return {
-        icon: <CheckCircle className="h-5 w-5 text-blue-600" />,
+        icon: <CheckCircle className="h-5 w-5" />,
         color: 'text-blue-600',
+        bgColor: 'bg-blue-50',
+        border: 'border-blue-100',
         text: 'All settled up',
       };
     }
   };
 
-  const { icon, color, text } = getStatusInfo();
+  const { icon, color, bgColor, border, text } = getStatusInfo();
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium text-gray-500">Your Balance</CardTitle>
+    <Card className={`overflow-hidden ${border} hover:shadow-md transition-shadow`}>
+      <CardHeader className={`pb-2 ${bgColor} border-b`}>
+        <CardTitle className="text-sm font-medium text-gray-700 flex items-center gap-2">
+          <DollarSign size={16} className={color} />
+          Your Balance
+        </CardTitle>
         {netBalance !== 0 && (
-          <CardDescription className="text-xs">
+          <CardDescription className="text-xs mt-1">
             {totalOwed > 0 && `You are owed ${formatAmount(totalOwed)}. `}
             {totalOwe > 0 && `You owe ${formatAmount(totalOwe)}.`}
           </CardDescription>
         )}
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-4">
         <div className="flex items-center gap-2">
-          {icon}
+          <div className={`p-1.5 rounded-full ${bgColor} ${color}`}>{icon}</div>
           <span className={`text-3xl font-bold ${color}`}>{formatAmount(netBalance)}</span>
         </div>
-        <div className="flex justify-between items-center">
-          <p className="text-sm text-gray-500 mt-1">{text}</p>
-          
+        <div className="flex justify-between items-center mt-2">
+          <p className="text-sm text-gray-600 font-medium">{text}</p>
+
           {netBalance !== 0 && (
-            <Button variant="ghost" size="sm" className="text-xs mt-1" asChild>
-              <Link href="/payments" className="flex items-center gap-1">
-                View Payments
+            <Button variant="outline" size="sm" className="text-xs" asChild>
+              <Link href="/payments" className="flex items-center gap-1 font-medium">
+                View Details
                 <ArrowRight className="h-3 w-3" />
               </Link>
             </Button>

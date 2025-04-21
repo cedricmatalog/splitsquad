@@ -25,8 +25,10 @@ function NavItem({ href, children, isActive }: NavItemProps) {
   return (
     <Link
       href={href}
-      className={`flex items-center px-4 py-2 rounded-md transition-colors ${
-        isActive ? 'bg-primary/10 text-primary font-medium' : 'text-gray-700 hover:bg-gray-100'
+      className={`flex items-center px-4 py-2 rounded-md transition-all duration-200 ${
+        isActive
+          ? 'bg-primary/10 text-primary font-medium shadow-sm'
+          : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
       }`}
     >
       {children}
@@ -63,11 +65,14 @@ export function AppLayout({ children }: AppLayoutProps) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="border-b bg-white">
-        <div className="container mx-auto p-4 flex justify-between items-center">
+    <div className="min-h-screen flex flex-col bg-gray-50">
+      <header className="border-b bg-white shadow-sm sticky top-0 z-10">
+        <div className="container mx-auto px-4 py-3 flex justify-between items-center">
           <div className="flex items-center gap-8">
-            <Link href="/dashboard" className="text-xl font-bold flex items-center gap-2">
+            <Link
+              href="/dashboard"
+              className="text-xl font-bold flex items-center gap-2 text-gray-900 hover:text-primary transition-colors"
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="24"
@@ -84,10 +89,10 @@ export function AppLayout({ children }: AppLayoutProps) {
                 <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"></path>
                 <path d="M12 17V7"></path>
               </svg>
-              SplitSquad
+              <span>SplitSquad</span>
             </Link>
 
-            <nav className="hidden md:flex items-center gap-1">
+            <nav className="hidden md:flex items-center gap-2">
               <NavItem href="/dashboard" isActive={pathname === '/dashboard'}>
                 Dashboard
               </NavItem>
@@ -110,21 +115,38 @@ export function AppLayout({ children }: AppLayoutProps) {
             <div className="flex items-center gap-4">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                  <Button
+                    variant="ghost"
+                    className="relative h-10 w-10 rounded-full overflow-hidden ring-2 ring-primary/5 hover:ring-primary/20 transition-all"
+                  >
                     <Avatar>
                       <AvatarImage src={currentUser.avatar} alt={currentUser.name} />
-                      <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
+                      <AvatarFallback className="bg-primary/10 text-primary font-medium">
+                        {currentUser.name.charAt(0)}
+                      </AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                  <DropdownMenuItem disabled>{currentUser.name}</DropdownMenuItem>
+                  <DropdownMenuItem disabled className="opacity-70">
+                    {currentUser.name}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem disabled className="opacity-70 text-xs">
+                    {currentUser.email}
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <Link href="/settings">Settings</Link>
+                    <Link href="/settings" className="cursor-pointer">
+                      Settings
+                    </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleSignOut}>Sign out</DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={handleSignOut}
+                    className="cursor-pointer text-red-600 hover:text-red-700 focus:text-red-700"
+                  >
+                    Sign out
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -132,13 +154,26 @@ export function AppLayout({ children }: AppLayoutProps) {
         </div>
       </header>
 
-      <main className="flex-1 bg-gray-50">{children}</main>
+      <main className="flex-1 pb-10">{children}</main>
 
       <footer className="border-t py-6 bg-white">
         <div className="container mx-auto px-4">
-          <p className="text-center text-gray-500 text-sm">
-            SplitSquad © {new Date().getFullYear()} - Share expenses easily
-          </p>
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <p className="text-gray-500 text-sm">
+              SplitSquad © {new Date().getFullYear()} - Share expenses easily
+            </p>
+            <div className="flex gap-4 text-sm">
+              <Link href="/privacy" className="text-gray-500 hover:text-gray-700 transition-colors">
+                Privacy
+              </Link>
+              <Link href="/terms" className="text-gray-500 hover:text-gray-700 transition-colors">
+                Terms
+              </Link>
+              <Link href="/help" className="text-gray-500 hover:text-gray-700 transition-colors">
+                Help
+              </Link>
+            </div>
+          </div>
         </div>
       </footer>
     </div>
