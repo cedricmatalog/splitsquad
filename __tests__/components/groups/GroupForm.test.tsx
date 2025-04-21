@@ -9,7 +9,7 @@ const MockLink = ({ href, children }: { href: string; children: React.ReactNode 
 
 // Mock next/link before importing any components that might use it
 jest.mock('next/link', () => {
-  return function Link(props: any) {
+  return function Link(props: { href: string; children: React.ReactNode }) {
     return <MockLink {...props} />;
   };
 });
