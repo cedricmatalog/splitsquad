@@ -100,6 +100,20 @@ export function ExpenseForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty dependency array means this runs once on mount
 
+  // Update equal shares when amount changes
+  useEffect(() => {
+    if (splitType !== 'equal' || !selectedGroupId || !amount) return;
+
+    const amountValue = parseFloat(amount);
+    if (isNaN(amountValue)) return;
+
+    const members = getGroupMembers(selectedGroupId);
+    const memberIds = members.map(member => member.id);
+
+    const equalShares = calculateEqualShares(memberIds, amountValue);
+    setShares(equalShares);
+  }, [amount, splitType, shares.length, selectedGroupId, calculateEqualShares, getGroupMembers]);
+
   // Handle selecting a group
   const handleGroupChange = (groupId: string) => {
     setSelectedGroupId(groupId);

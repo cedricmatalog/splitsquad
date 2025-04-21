@@ -19,6 +19,9 @@ import {
 import { Input } from '@/components/ui/input';
 import { GroupMember } from '@/types';
 import { ExpenseList } from '@/components/expenses/ExpenseList';
+import { BalanceOverview } from '@/components/balances/BalanceOverview';
+import { DetailedBalances } from '@/components/balances/DetailedBalances';
+import { SettlementSuggestions } from '@/components/balances/SettlementSuggestions';
 
 export default function GroupDetails({ params }: { params: Promise<{ id: string }> }) {
   const { id: groupId } = use(params);
@@ -29,8 +32,7 @@ export default function GroupDetails({ params }: { params: Promise<{ id: string 
     setGroupMembers,
     currentUser,
   } = useAppContext();
-  const { getGroupExpenses, getGroupMembers, calculateGroupBalances, calculateSimplifiedPayments } =
-    useExpenseCalculations();
+  const { getGroupExpenses, getGroupMembers } = useExpenseCalculations();
 
   const [activeTab, setActiveTab] = useState('expenses');
   const [membersDialogOpen, setMembersDialogOpen] = useState(false);
@@ -60,9 +62,6 @@ export default function GroupDetails({ params }: { params: Promise<{ id: string 
     ? allGroupMembers.some(member => member.userId === currentUser.id && member.groupId === groupId)
     : false;
 
-  const balances = calculateGroupBalances(groupId);
-  const simplifiedPayments = calculateSimplifiedPayments(groupId);
-
   const getCreatorName = (creatorId: string) => {
     const creator = users.find(user => user.id === creatorId);
     return creator ? creator.name : 'Unknown';
@@ -74,13 +73,6 @@ export default function GroupDetails({ params }: { params: Promise<{ id: string 
       month: 'short',
       day: 'numeric',
     });
-  };
-
-  const formatAmount = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
   };
 
   const handleJoinGroup = () => {
@@ -234,127 +226,14 @@ export default function GroupDetails({ params }: { params: Promise<{ id: string 
           </TabsContent>
 
           <TabsContent value="balances">
-            <Card>
-              <CardHeader>
-                <CardTitle>Current Balances</CardTitle>
-                <CardDescription>See who owes what in this group</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {balances.length > 0 ? (
-                  <div className="space-y-4">
-                    {balances.map(balance => (
-                      <div
-                        key={balance.userId}
-                        className="flex items-center justify-between py-2 border-b last:border-0"
-                      >
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarFallback>{balance.userName.charAt(0)}</AvatarFallback>
-                          </Avatar>
-                          <span>{balance.userName}</span>
-                        </div>
-                        <div
-                          className={`font-semibold ${
-                            balance.amount > 0
-                              ? 'text-green-600'
-                              : balance.amount < 0
-                                ? 'text-red-600'
-                                : ''
-                          }`}
-                        >
-                          {balance.amount > 0
-                            ? `Gets back ${formatAmount(balance.amount)}`
-                            : balance.amount < 0
-                              ? `Owes ${formatAmount(Math.abs(balance.amount))}`
-                              : 'Settled up'}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-500 text-center py-4">
-                    No balances to show. Add expenses to see balances.
-                  </p>
-                )}
-              </CardContent>
-            </Card>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <BalanceOverview groupId={groupId} />
+              <DetailedBalances groupId={groupId} />
+            </div>
           </TabsContent>
 
           <TabsContent value="settlements">
-            <Card>
-              <CardHeader>
-                <CardTitle>Suggested Settlements</CardTitle>
-                <CardDescription>Simplified payments to settle all debts</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {simplifiedPayments.length > 0 ? (
-                  <div className="space-y-4">
-                    {simplifiedPayments.map((payment, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between py-2 border-b last:border-0"
-                      >
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <Avatar className="h-6 w-6">
-                              <AvatarFallback>{payment.fromName.charAt(0)}</AvatarFallback>
-                            </Avatar>
-                            <span>{payment.fromName}</span>
-                          </div>
-                        </div>
-                        <div className="flex-1 text-center">
-                          <div className="inline-flex items-center px-3 py-1 rounded-full bg-gray-100 text-sm">
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              width="16"
-                              height="16"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              className="mr-1 text-gray-600"
-                            >
-                              <path d="M6 12h12"></path>
-                              <path d="M12 18V6"></path>
-                            </svg>
-                            <span>{formatAmount(payment.amount)}</span>
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              width="16"
-                              height="16"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              className="ml-1 text-gray-600"
-                            >
-                              <path d="M5 12h14"></path>
-                              <path d="M12 5l7 7-7 7"></path>
-                            </svg>
-                          </div>
-                        </div>
-                        <div className="flex-1 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <span>{payment.toName}</span>
-                            <Avatar className="h-6 w-6">
-                              <AvatarFallback>{payment.toName.charAt(0)}</AvatarFallback>
-                            </Avatar>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-500 text-center py-4">
-                    No settlements needed. Everyone is settled up!
-                  </p>
-                )}
-              </CardContent>
-            </Card>
+            <SettlementSuggestions groupId={groupId} />
           </TabsContent>
 
           <TabsContent value="members">
