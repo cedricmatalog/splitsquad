@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { AppLayout } from '@/components/AppLayout';
 import { ReactNode } from 'react';
 import * as navigation from 'next/navigation';
@@ -44,6 +44,16 @@ MockLink.displayName = 'MockLink';
 
 jest.mock('next/link', () => MockLink);
 
+// Mock Lucide Icons
+jest.mock('lucide-react', () => ({
+  Menu: () => <span data-testid="menu-icon" />,
+  X: () => <span data-testid="close-icon" />,
+  LayoutDashboard: () => <span data-testid="dashboard-icon" />,
+  Users: () => <span data-testid="users-icon" />,
+  DollarSign: () => <span data-testid="dollar-icon" />,
+  ChevronRight: () => <span data-testid="chevron-icon" />,
+}));
+
 describe('AppLayout', () => {
   it('renders the layout with header, main content and footer', () => {
     render(
@@ -53,9 +63,11 @@ describe('AppLayout', () => {
     );
 
     expect(screen.getByText('SplitSquad')).toBeInTheDocument();
-    expect(screen.getByText('Dashboard')).toBeInTheDocument();
-    expect(screen.getByText('Groups')).toBeInTheDocument();
-    expect(screen.getByText('Expenses')).toBeInTheDocument();
+    // Test presence of navigation items
+    const navItems = screen.getAllByText('Dashboard');
+    expect(navItems.length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Groups').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Expenses').length).toBeGreaterThan(0);
     expect(screen.getByTestId('test-content')).toBeInTheDocument();
     expect(screen.getByText(/SplitSquad © \d{4}/)).toBeInTheDocument();
   });
@@ -68,9 +80,11 @@ describe('AppLayout', () => {
       </AppLayout>
     );
 
-    const dashboardLink = screen.getByText('Dashboard').closest('a');
-    const groupsLink = screen.getByText('Groups').closest('a');
-    const expensesLink = screen.getByText('Expenses').closest('a');
+    // Find navigation items by role with name to be more specific
+    const desktopNav = screen.getAllByRole('navigation')[0]; // Get the first navigation element
+    const dashboardLink = within(desktopNav).getByText('Dashboard').closest('a');
+    const groupsLink = within(desktopNav).getByText('Groups').closest('a');
+    const expensesLink = within(desktopNav).getByText('Expenses').closest('a');
 
     expect(dashboardLink).toBeInTheDocument();
     expect(groupsLink).toBeInTheDocument();

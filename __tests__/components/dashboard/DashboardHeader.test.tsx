@@ -8,6 +8,11 @@ jest.mock('@/context/AppContext', () => ({
   })),
 }));
 
+// Mock date-fns format function
+jest.mock('date-fns', () => ({
+  format: jest.fn(() => '10:30 AM'),
+}));
+
 describe('DashboardHeader', () => {
   it('renders the welcome message and description', () => {
     render(<DashboardHeader />);
@@ -20,7 +25,7 @@ describe('DashboardHeader', () => {
         'Track your expenses, settle debts, and manage your shared costs in one place.'
       )
     ).toBeInTheDocument();
-    // Check for the last sync text
-    expect(screen.getByText(/Last sync:/)).toBeInTheDocument();
+    // Check for the updated time text
+    expect(screen.getByText(/Updated:/)).toBeInTheDocument();
   });
 });
