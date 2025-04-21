@@ -9,7 +9,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
 import useExpenseCalculations from '@/hooks/useExpenseCalculations';
+import Link from 'next/link';
 
 interface DetailedBalancesProps {
   groupId: string;
@@ -70,11 +72,21 @@ export function DetailedBalances({ groupId }: DetailedBalancesProps) {
     }).format(amount);
   };
 
+  // Only show record payment button if there are outstanding balances
+  const showRecordPaymentButton = detailedBalances.length > 0;
+
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Detailed Balances</CardTitle>
-        <CardDescription>Who owes what to whom</CardDescription>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle>Detailed Balances</CardTitle>
+          <CardDescription>Who owes what to whom</CardDescription>
+        </div>
+        {showRecordPaymentButton && (
+          <Button asChild>
+            <Link href={`/groups/${groupId}/payments/new`}>Record Payment</Link>
+          </Button>
+        )}
       </CardHeader>
       <CardContent>
         {detailedBalances.length === 0 ? (

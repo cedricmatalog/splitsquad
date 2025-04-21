@@ -3,7 +3,7 @@
 import { useAppContext } from '@/context/AppContext';
 import { Expense, ExpenseParticipant, Payment, User } from '@/types';
 
-interface Balance {
+interface UserBalance {
   userId: string;
   userName: string;
   amount: number;
@@ -11,7 +11,7 @@ interface Balance {
 
 interface GroupBalance {
   groupId: string;
-  balances: Balance[];
+  balances: UserBalance[];
 }
 
 export default function useExpenseCalculations() {
@@ -54,46 +54,92 @@ export default function useExpenseCalculations() {
     return payments.filter(payment => payment.groupId === groupId);
   };
 
-  // Calculate balances for a specific group
-  const calculateGroupBalances = (groupId: string): Balance[] => {
+  // Calculate balances for all users in a group
+  const calculateGroupBalances = (groupId: string): UserBalance[] => {
+    const members = getGroupMembers(groupId);
     const groupExpenses = getGroupExpenses(groupId);
-    const groupPaymentsList = getGroupPayments(groupId);
-    const balances: Record<string, number> = {};
+    const groupPayments = getGroupPayments(groupId);
     
-    // Initialize balances for all group members
-    getGroupMembers(groupId).forEach(member => {
+    // Initialize balances for all members
+    const balances: Record<string, number> = {};
+    members.forEach(member => {
       balances[member.id] = 0;
     });
 
-    // Calculate from expenses
+    // Process all expenses
     groupExpenses.forEach(expense => {
       const paidBy = expense.paidBy;
-      const participants = getExpenseParticipants(expense.id);
+      const expenseParticipants = getExpenseParticipants(expense.id);
       
-      // Add the full amount to the payer
+      // Add the full amount to the payer's balance (they are owed this money)
       balances[paidBy] = (balances[paidBy] || 0) + expense.amount;
       
-      // Subtract each participant's share
-      participants.forEach(participant => {
+      // Subtract each participant's share from their balance (they owe this money)
+      expenseParticipants.forEach(participant => {
         balances[participant.userId] = (balances[participant.userId] || 0) - participant.share;
       });
     });
 
-    // Adjust for payments
-    groupPaymentsList.forEach(payment => {
+    // Process all payments
+    groupPayments.forEach(payment => {
+      // The person who paid (fromUser) has their balance decreased
       balances[payment.fromUser] = (balances[payment.fromUser] || 0) - payment.amount;
+      
+      // The person who received (toUser) has their balance increased
       balances[payment.toUser] = (balances[payment.toUser] || 0) + payment.amount;
     });
 
-    // Convert to array format with user names
-    return Object.entries(balances).map(([userId, amount]) => {
-      const user = findUser(userId);
-      return {
-        userId,
-        userName: user ? user.name : 'Unknown User',
-        amount: parseFloat(amount.toFixed(2))
-      };
+    // Convert to array with user details
+    return members.map(member => ({
+      userId: member.id,
+      userName: member.name,
+      // Round to 2 decimal places for currency
+      amount: parseFloat(balances[member.id].toFixed(2))
+    }));
+  };
+
+  // Calculate total owed to a specific user across all groups
+  const calculateTotalOwedToUser = (userId: string): number => {
+    let totalOwed = 0;
+    
+    // Get all groups this user is a member of
+    const userGroupIds = groupMembers
+      .filter(gm => gm.userId === userId)
+      .map(gm => gm.groupId);
+    
+    // For each group, calculate balances and add any positive balance for this user
+    userGroupIds.forEach(groupId => {
+      const balances = calculateGroupBalances(groupId);
+      const userBalance = balances.find(b => b.userId === userId);
+      
+      if (userBalance && userBalance.amount > 0) {
+        totalOwed += userBalance.amount;
+      }
     });
+    
+    return parseFloat(totalOwed.toFixed(2));
+  };
+
+  // Calculate total a user owes to others across all groups
+  const calculateTotalUserOwes = (userId: string): number => {
+    let totalOwes = 0;
+    
+    // Get all groups this user is a member of
+    const userGroupIds = groupMembers
+      .filter(gm => gm.userId === userId)
+      .map(gm => gm.groupId);
+    
+    // For each group, calculate balances and add any negative balance for this user
+    userGroupIds.forEach(groupId => {
+      const balances = calculateGroupBalances(groupId);
+      const userBalance = balances.find(b => b.userId === userId);
+      
+      if (userBalance && userBalance.amount < 0) {
+        totalOwes += Math.abs(userBalance.amount);
+      }
+    });
+    
+    return parseFloat(totalOwes.toFixed(2));
   };
 
   // Calculate all group balances
@@ -162,9 +208,12 @@ export default function useExpenseCalculations() {
     getGroupExpenses,
     getGroupMembers,
     getExpenseParticipants,
+    getGroupPayments,
     calculateGroupBalances,
     calculateAllGroupBalances,
     calculateUserTotalBalance,
-    calculateSimplifiedPayments
+    calculateSimplifiedPayments,
+    calculateTotalOwedToUser,
+    calculateTotalUserOwes
   };
 } 

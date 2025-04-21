@@ -1,10 +1,13 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { GroupForm } from '@/components/groups/GroupForm';
 import { User } from '@/types';
-import { setupMocks } from '../../utils/test-utils';
+import { setupMocks, MockLink } from '../../utils/test-utils';
 
 // Setup mock environment
 setupMocks();
+
+// Mock Next.js Link component
+jest.mock('next/link', () => MockLink);
 
 describe('GroupForm', () => {
   const mockUsers: User[] = [
