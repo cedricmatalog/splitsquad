@@ -1,13 +1,13 @@
 'use client';
 
-import { Suspense, use } from 'react';
-import Link from 'next/link';
+import { use } from 'react';
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
 import { useAppContext } from '@/context/AppContext';
 import useExpenseCalculations from '@/hooks/useExpenseCalculations';
 import { ExpenseForm } from '@/components/expenses/ExpenseForm';
 
-function EditExpensePage({ params }: { params: Promise<{ id: string }> }) {
+export default function EditExpensePage({ params }: { params: Promise<{ id: string }> }) {
   const { id: expenseId } = use(params);
   const { expenses } = useAppContext();
   const { getExpenseParticipants } = useExpenseCalculations();
@@ -41,13 +41,5 @@ function EditExpensePage({ params }: { params: Promise<{ id: string }> }) {
 
       <ExpenseForm expense={expense} expenseParticipants={expenseParticipants} isEditing={true} />
     </div>
-  );
-}
-
-export default function EditExpensePageWithSuspense({ params }: { params: { id: string } }) {
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <EditExpensePage params={Promise.resolve(params)} />
-    </Suspense>
   );
 }
