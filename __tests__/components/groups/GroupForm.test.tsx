@@ -1,13 +1,18 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { GroupForm } from '@/components/groups/GroupForm';
 import { User } from '@/types';
-import { setupMocks, MockLink } from '../../utils/test-utils';
 
-// Setup mock environment
-setupMocks();
+// Create a mock for Next.js Link directly in this file to avoid circular dependencies
+const MockLink = ({ href, children }: { href: string; children: React.ReactNode }) => {
+  return <a href={href}>{children}</a>;
+};
 
-// Mock Next.js Link component
-jest.mock('next/link', () => MockLink);
+// Mock next/link before importing any components that might use it
+jest.mock('next/link', () => {
+  return function Link(props: any) {
+    return <MockLink {...props} />;
+  };
+});
 
 describe('GroupForm', () => {
   const mockUsers: User[] = [

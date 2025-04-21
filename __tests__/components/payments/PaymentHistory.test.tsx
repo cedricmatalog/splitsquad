@@ -60,9 +60,9 @@ describe('PaymentHistory', () => {
     
     // Check that all payments are displayed
     expect(screen.getAllByRole('row')).toHaveLength(4); // 3 payments + header row
-    expect(screen.getByText('Alex Johnson')).toBeInTheDocument();
-    expect(screen.getByText('Jamie Smith')).toBeInTheDocument();
-    expect(screen.getByText('Taylor Brown')).toBeInTheDocument();
+    expect(screen.getAllByText('Alex Johnson')).toHaveLength(2);
+    expect(screen.getAllByText('Jamie Smith')).toHaveLength(2);
+    expect(screen.getAllByText('Taylor Brown')).toHaveLength(2);
   });
 
   it('filters payments by group ID', () => {
@@ -70,9 +70,9 @@ describe('PaymentHistory', () => {
     
     // Should only show payments from group-1
     expect(screen.getAllByRole('row')).toHaveLength(3); // 2 payments + header row
-    expect(screen.getByText('Alex Johnson')).toBeInTheDocument();
-    expect(screen.getByText('Jamie Smith')).toBeInTheDocument();
-    expect(screen.getByText('Taylor Brown')).toBeInTheDocument();
+    expect(screen.getAllByText('Alex Johnson')).toHaveLength(1);
+    expect(screen.getAllByText('Jamie Smith')).toHaveLength(2);
+    expect(screen.getAllByText('Taylor Brown')).toHaveLength(1);
     
     // Should not show the payment from group-2
     expect(screen.getAllByText(/\$\d+\.\d+/)).toHaveLength(2);
@@ -83,7 +83,7 @@ describe('PaymentHistory', () => {
     
     // Should only show payments involving user-1
     expect(screen.getAllByRole('row')).toHaveLength(3); // 2 payments + header row
-    expect(screen.getByText('Alex Johnson')).toBeInTheDocument();
+    expect(screen.getAllByText('Alex Johnson')).toHaveLength(2);
     
     // Should not include the payment between user-2 and user-3
     const amounts = screen.getAllByText(/\$\d+\.\d+/);

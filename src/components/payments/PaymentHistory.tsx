@@ -18,7 +18,6 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { useAppContext } from '@/context/AppContext';
-import { Payment } from '@/types';
 
 interface PaymentHistoryProps {
   groupId?: string; // Optional to filter by group

@@ -1,8 +1,7 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { PaymentForm } from '@/components/payments/PaymentForm';
 import { useAppContext } from '@/context/AppContext';
 import { useRouter } from 'next/navigation';
-import { nanoid } from 'nanoid';
 
 // Mock nanoid to generate consistent IDs for testing
 jest.mock('nanoid', () => ({
@@ -21,7 +20,17 @@ jest.mock('@/context/AppContext', () => ({
 
 // Mock the PaymentConfirmation component
 jest.mock('@/components/payments/PaymentConfirmation', () => ({
-  PaymentConfirmation: ({ payment, onDismiss }: any) => (
+  PaymentConfirmation: ({ payment, onDismiss }: {
+    payment: {
+      id: string;
+      fromUser: string;
+      toUser: string;
+      amount: number;
+      date: string;
+      groupId: string;
+    };
+    onDismiss?: () => void;
+  }) => (
     <div data-testid="payment-confirmation">
       <div data-testid="payment-amount">{payment.amount}</div>
       <div data-testid="payment-from">{payment.fromUser}</div>
@@ -76,7 +85,8 @@ describe('PaymentForm', () => {
   it('renders the payment form correctly', () => {
     render(<PaymentForm groupId="group-1" />);
 
-    expect(screen.getByText('Record Payment')).toBeInTheDocument();
+    // Use getAllByText since 'Record Payment' appears in both the title and the submit button
+    expect(screen.getAllByText('Record Payment')).toHaveLength(2);
     expect(screen.getByText('From')).toBeInTheDocument();
     expect(screen.getByText('To')).toBeInTheDocument();
     expect(screen.getByText('Amount')).toBeInTheDocument();

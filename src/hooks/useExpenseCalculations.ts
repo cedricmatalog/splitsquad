@@ -25,11 +25,6 @@ export default function useExpenseCalculations() {
     currentUser
   } = useAppContext();
 
-  // Find user by ID
-  const findUser = (userId: string): User | undefined => {
-    return users.find(user => user.id === userId);
-  };
-
   // Get all expenses for a specific group
   const getGroupExpenses = (groupId: string): Expense[] => {
     return expenses.filter(expense => expense.groupId === groupId);

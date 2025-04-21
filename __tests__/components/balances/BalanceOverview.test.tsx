@@ -15,7 +15,13 @@ jest.mock('@/hooks/useExpenseCalculations', () => ({
 
 // Mock the PaymentForm component
 jest.mock('@/components/payments/PaymentForm', () => ({
-  PaymentForm: ({ groupId, fromUserId, toUserId, suggestedAmount, onSuccess }: any) => (
+  PaymentForm: ({ groupId, fromUserId, toUserId, suggestedAmount, onSuccess }: {
+    groupId: string;
+    fromUserId?: string;
+    toUserId?: string;
+    suggestedAmount?: number;
+    onSuccess?: () => void;
+  }) => (
     <div data-testid="payment-form">
       <div>Group: {groupId}</div>
       <div>From: {fromUserId}</div>
