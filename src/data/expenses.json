@@ -1,0 +1,58 @@
+[
+  {
+    "id": "expense-1",
+    "groupId": "group-1",
+    "description": "Groceries",
+    "amount": 125.75,
+    "paidBy": "user-1",
+    "date": "2023-07-12T14:20:00Z"
+  },
+  {
+    "id": "expense-2",
+    "groupId": "group-1",
+    "description": "Beach rental",
+    "amount": 450.00,
+    "paidBy": "user-2",
+    "date": "2023-07-11T10:00:00Z"
+  },
+  {
+    "id": "expense-3",
+    "groupId": "group-2",
+    "description": "Electricity bill",
+    "amount": 87.35,
+    "paidBy": "user-2",
+    "date": "2023-01-10T16:45:00Z"
+  },
+  {
+    "id": "expense-4",
+    "groupId": "group-2",
+    "description": "Internet",
+    "amount": 65.00,
+    "paidBy": "user-3",
+    "date": "2023-01-15T08:30:00Z"
+  },
+  {
+    "id": "expense-5",
+    "groupId": "group-3",
+    "description": "Gas",
+    "amount": 78.50,
+    "paidBy": "user-3",
+    "date": "2023-08-16T11:20:00Z"
+  },
+  {
+    "id": "expense-6",
+    "groupId": "group-3",
+    "description": "Hotel",
+    "amount": 210.00,
+    "paidBy": "user-4",
+    "date": "2023-08-17T20:15:00Z"
+  },
+  {
+    "id": "expense-7",
+    "groupId": "group-4",
+    "description": "Italian restaurant",
+    "amount": 180.25,
+    "paidBy": "user-5",
+    "date": "2023-06-25T19:45:00Z"
+  }
+] 

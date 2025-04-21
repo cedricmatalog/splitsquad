@@ -1,0 +1,66 @@
+[
+  {
+    "id": "payment-1",
+    "fromUser": "user-3",
+    "toUser": "user-1",
+    "amount": 31.44,
+    "date": "2023-07-15T18:30:00Z",
+    "groupId": "group-1"
+  },
+  {
+    "id": "payment-2",
+    "fromUser": "user-4",
+    "toUser": "user-1",
+    "amount": 31.43,
+    "date": "2023-07-16T09:15:00Z",
+    "groupId": "group-1"
+  },
+  {
+    "id": "payment-3",
+    "fromUser": "user-1",
+    "toUser": "user-2",
+    "amount": 112.50,
+    "date": "2023-07-20T14:45:00Z",
+    "groupId": "group-1"
+  },
+  {
+    "id": "payment-4",
+    "fromUser": "user-5",
+    "toUser": "user-2",
+    "amount": 29.11,
+    "date": "2023-01-18T20:10:00Z",
+    "groupId": "group-2"
+  },
+  {
+    "id": "payment-5",
+    "fromUser": "user-2",
+    "toUser": "user-3",
+    "amount": 21.67,
+    "date": "2023-01-25T17:30:00Z",
+    "groupId": "group-2"
+  },
+  {
+    "id": "payment-6",
+    "fromUser": "user-5",
+    "toUser": "user-3",
+    "amount": 26.16,
+    "date": "2023-08-20T13:20:00Z",
+    "groupId": "group-3"
+  },
+  {
+    "id": "payment-7",
+    "fromUser": "user-3",
+    "toUser": "user-4",
+    "amount": 70.00,
+    "date": "2023-08-22T10:45:00Z",
+    "groupId": "group-3"
+  },
+  {
+    "id": "payment-8",
+    "fromUser": "user-1",
+    "toUser": "user-5",
+    "amount": 60.08,
+    "date": "2023-06-28T21:15:00Z",
+    "groupId": "group-4"
+  }
+] 

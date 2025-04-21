@@ -1,0 +1,30 @@
+[
+  {
+    "id": "group-1",
+    "name": "Summer Vacation",
+    "description": "Beach house expenses for summer 2023",
+    "createdBy": "user-1",
+    "date": "2023-07-10T12:00:00Z"
+  },
+  {
+    "id": "group-2",
+    "name": "Roommates",
+    "description": "Monthly apartment expenses",
+    "createdBy": "user-2",
+    "date": "2023-01-05T09:30:00Z"
+  },
+  {
+    "id": "group-3",
+    "name": "Road Trip",
+    "description": "Weekend road trip expenses",
+    "createdBy": "user-3",
+    "date": "2023-08-15T15:45:00Z"
+  },
+  {
+    "id": "group-4",
+    "name": "Dinner Club",
+    "description": "Restaurant outings",
+    "createdBy": "user-4",
+    "date": "2023-06-20T19:00:00Z"
+  }
+] 

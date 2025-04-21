@@ -1,0 +1,117 @@
+[
+  {
+    "expenseId": "expense-1",
+    "userId": "user-1",
+    "share": 31.44
+  },
+  {
+    "expenseId": "expense-1",
+    "userId": "user-2",
+    "share": 31.44
+  },
+  {
+    "expenseId": "expense-1",
+    "userId": "user-3",
+    "share": 31.44
+  },
+  {
+    "expenseId": "expense-1",
+    "userId": "user-4",
+    "share": 31.43
+  },
+  {
+    "expenseId": "expense-2",
+    "userId": "user-1",
+    "share": 112.50
+  },
+  {
+    "expenseId": "expense-2",
+    "userId": "user-2",
+    "share": 112.50
+  },
+  {
+    "expenseId": "expense-2",
+    "userId": "user-3",
+    "share": 112.50
+  },
+  {
+    "expenseId": "expense-2",
+    "userId": "user-4",
+    "share": 112.50
+  },
+  {
+    "expenseId": "expense-3",
+    "userId": "user-2",
+    "share": 29.12
+  },
+  {
+    "expenseId": "expense-3",
+    "userId": "user-3",
+    "share": 29.12
+  },
+  {
+    "expenseId": "expense-3",
+    "userId": "user-5",
+    "share": 29.11
+  },
+  {
+    "expenseId": "expense-4",
+    "userId": "user-2",
+    "share": 21.67
+  },
+  {
+    "expenseId": "expense-4",
+    "userId": "user-3",
+    "share": 21.67
+  },
+  {
+    "expenseId": "expense-4",
+    "userId": "user-5",
+    "share": 21.66
+  },
+  {
+    "expenseId": "expense-5",
+    "userId": "user-3",
+    "share": 26.17
+  },
+  {
+    "expenseId": "expense-5",
+    "userId": "user-4",
+    "share": 26.17
+  },
+  {
+    "expenseId": "expense-5",
+    "userId": "user-5",
+    "share": 26.16
+  },
+  {
+    "expenseId": "expense-6",
+    "userId": "user-3",
+    "share": 70.00
+  },
+  {
+    "expenseId": "expense-6",
+    "userId": "user-4",
+    "share": 70.00
+  },
+  {
+    "expenseId": "expense-6",
+    "userId": "user-5",
+    "share": 70.00
+  },
+  {
+    "expenseId": "expense-7",
+    "userId": "user-1",
+    "share": 60.08
+  },
+  {
+    "expenseId": "expense-7",
+    "userId": "user-4",
+    "share": 60.08
+  },
+  {
+    "expenseId": "expense-7",
+    "userId": "user-5",
+    "share": 60.09
+  }
+] 
