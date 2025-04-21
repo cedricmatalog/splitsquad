@@ -8,14 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
-import { 
   Tabs, 
   TabsContent, 
   TabsList, 
@@ -31,6 +23,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { GroupMember } from '@/types';
+import { ExpenseList } from '@/components/expenses/ExpenseList';
 
 export default function GroupDetails({ params }: { params: Promise<{ id: string }> }) {
   const { id: groupId } = use(params);
@@ -82,11 +75,6 @@ export default function GroupDetails({ params }: { params: Promise<{ id: string 
   const getCreatorName = (creatorId: string) => {
     const creator = users.find(user => user.id === creatorId);
     return creator ? creator.name : 'Unknown';
-  };
-  
-  const getUserName = (userId: string) => {
-    const user = users.find(user => user.id === userId);
-    return user ? user.name : 'Unknown';
   };
   
   const formatDate = (dateString: string) => {
@@ -253,49 +241,7 @@ export default function GroupDetails({ params }: { params: Promise<{ id: string 
           </TabsList>
           
           <TabsContent value="expenses">
-            <div className="bg-white rounded-lg border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Paid By</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {groupExpenses.length > 0 ? (
-                    groupExpenses.map((expense) => (
-                      <TableRow key={expense.id}>
-                        <TableCell className="font-medium">{expense.description}</TableCell>
-                        <TableCell>{formatAmount(expense.amount)}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Avatar className="h-6 w-6">
-                              <AvatarFallback>{getUserName(expense.paidBy).charAt(0)}</AvatarFallback>
-                            </Avatar>
-                            <span>{getUserName(expense.paidBy)}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>{formatDate(expense.date)}</TableCell>
-                        <TableCell className="text-right">
-                          <Button variant="ghost" size="sm" asChild>
-                            <Link href={`/expenses/${expense.id}`}>View</Link>
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center text-gray-500 h-24">
-                        No expenses yet. Add one to get started.
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+            <ExpenseList expenses={groupExpenses} groupId={groupId} showGroupColumn={false} />
           </TabsContent>
           
           <TabsContent value="balances">

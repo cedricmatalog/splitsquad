@@ -16,7 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-
+import { format } from 'date-fns';
 
 export default function ExpenseDetails({ params }: { params: Promise<{ id: string }> }) {
   const { id: expenseId } = use(params);
@@ -47,19 +47,18 @@ export default function ExpenseDetails({ params }: { params: Promise<{ id: strin
     return user ? user.name : 'Unknown';
   };
   
+  const getUserAvatar = (userId: string) => {
+    const user = users.find(user => user.id === userId);
+    return user ? user.avatar : '';
+  };
+  
   const getGroupName = (groupId: string) => {
     const group = groups.find(group => group.id === groupId);
     return group ? group.name : 'Unknown Group';
   };
   
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: 'numeric'
-    });
+    return format(new Date(dateString), 'PPP p');
   };
   
   const formatAmount = (amount: number) => {
@@ -127,7 +126,7 @@ export default function ExpenseDetails({ params }: { params: Promise<{ id: strin
               <div className="flex items-center gap-2 mt-1">
                 <Avatar className="h-6 w-6">
                   <AvatarImage 
-                    src={users.find(u => u.id === expense.paidBy)?.avatar} 
+                    src={getUserAvatar(expense.paidBy)} 
                     alt={getUserName(expense.paidBy)} 
                   />
                   <AvatarFallback>{getUserName(expense.paidBy).charAt(0)}</AvatarFallback>
@@ -167,7 +166,7 @@ export default function ExpenseDetails({ params }: { params: Promise<{ id: strin
                   <div className="flex items-center gap-2">
                     <Avatar className="h-6 w-6">
                       <AvatarImage 
-                        src={users.find(u => u.id === participant.userId)?.avatar} 
+                        src={getUserAvatar(participant.userId)} 
                         alt={getUserName(participant.userId)} 
                       />
                       <AvatarFallback>{getUserName(participant.userId).charAt(0)}</AvatarFallback>
