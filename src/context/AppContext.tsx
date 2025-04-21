@@ -1,17 +1,14 @@
 'use client';
 
-import { createContext, useContext, ReactNode, useEffect, useState } from 'react';
-import useLocalStorage from '@/hooks/useLocalStorage';
+import { createContext, useContext, ReactNode, useEffect, useState, useCallback } from 'react';
 import { User, Group, Expense, GroupMember, ExpenseParticipant, Payment } from '@/types';
 import { signIn, signOut, getCurrentUser } from '@/services/auth';
-
-// Import mock data
-import usersData from '@/data/users.json';
-import groupsData from '@/data/groups.json';
-import expensesData from '@/data/expenses.json';
-import groupMembersData from '@/data/groupMembers.json';
-import expenseParticipantsData from '@/data/expenseParticipants.json';
-import paymentsData from '@/data/payments.json';
+import { getUsers } from '@/services/users';
+import { getGroups } from '@/services/groups';
+import { getExpenses } from '@/services/expenses';
+import { getGroupMembers } from '@/services/group_members';
+import { getExpenseParticipants } from '@/services/expense_participants';
+import { getPayments } from '@/services/payments';
 
 interface AppContextType {
   users: User[];
@@ -36,45 +33,55 @@ interface AppContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<User | null>;
   logout: () => void;
+  refreshData: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [users, setUsers] = useLocalStorage<User[]>('users', []);
-  const [groups, setGroups] = useLocalStorage<Group[]>('groups', []);
-  const [expenses, setExpenses] = useLocalStorage<Expense[]>('expenses', []);
-  const [groupMembers, setGroupMembers] = useLocalStorage<GroupMember[]>('groupMembers', []);
-  const [expenseParticipants, setExpenseParticipants] = useLocalStorage<ExpenseParticipant[]>(
-    'expenseParticipants',
-    []
-  );
-  const [payments, setPayments] = useLocalStorage<Payment[]>('payments', []);
+  // State for all entities
+  const [users, setUsers] = useState<User[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [groupMembers, setGroupMembers] = useState<GroupMember[]>([]);
+  const [expenseParticipants, setExpenseParticipants] = useState<ExpenseParticipant[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
+
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Initialize from mock data if localStorage is empty
-  useEffect(() => {
-    if (users.length === 0) {
-      setUsers(usersData);
+  // Function to refresh all data from Supabase
+  const refreshData = useCallback(async () => {
+    try {
+      // Only fetch data if user is authenticated
+      if (currentUser) {
+        const [
+          usersData,
+          groupsData,
+          expensesData,
+          groupMembersData,
+          expenseParticipantsData,
+          paymentsData,
+        ] = await Promise.all([
+          getUsers(),
+          getGroups(),
+          getExpenses(),
+          getGroupMembers(),
+          getExpenseParticipants(),
+          getPayments(),
+        ]);
+
+        setUsers(usersData);
+        setGroups(groupsData);
+        setExpenses(expensesData);
+        setGroupMembers(groupMembersData);
+        setExpenseParticipants(expenseParticipantsData);
+        setPayments(paymentsData);
+      }
+    } catch (error) {
+      console.error('Error refreshing data:', error);
     }
-    if (groups.length === 0) {
-      setGroups(groupsData);
-    }
-    if (expenses.length === 0) {
-      setExpenses(expensesData);
-    }
-    if (groupMembers.length === 0) {
-      setGroupMembers(groupMembersData);
-    }
-    if (expenseParticipants.length === 0) {
-      setExpenseParticipants(expenseParticipantsData);
-    }
-    if (payments.length === 0) {
-      setPayments(paymentsData);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [currentUser]);
 
   // Load current user from Supabase on mount
   useEffect(() => {
@@ -93,6 +100,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     loadUser();
   }, []);
+
+  // Load data when currentUser changes
+  useEffect(() => {
+    if (currentUser) {
+      refreshData();
+    }
+  }, [currentUser, refreshData]);
 
   // Login function using Supabase
   const login = async (email: string, password: string): Promise<User | null> => {
@@ -113,6 +127,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       await signOut();
       setCurrentUser(null);
+      // Clear all data
+      setUsers([]);
+      setGroups([]);
+      setExpenses([]);
+      setGroupMembers([]);
+      setExpenseParticipants([]);
+      setPayments([]);
     } catch (error) {
       console.error('Logout error:', error);
     }
@@ -139,6 +160,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         isLoading,
         login,
         logout,
+        refreshData,
       }}
     >
       {children}

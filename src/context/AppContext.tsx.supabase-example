@@ -1,0 +1,199 @@
+'use client';
+
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { User, Group, Expense, GroupMember, ExpenseParticipant, Payment } from '@/types';
+import { getCurrentUser, signIn, signOut, signUp } from '@/services/auth';
+import * as userService from '@/services/users';
+import * as groupService from '@/services/groups';
+import * as expenseService from '@/services/expenses';
+import * as groupMemberService from '@/services/group_members';
+import * as expenseParticipantService from '@/services/expense_participants';
+import * as paymentService from '@/services/payments';
+
+interface AppContextType {
+  // State
+  users: User[];
+  groups: Group[];
+  expenses: Expense[];
+  groupMembers: GroupMember[];
+  expenseParticipants: ExpenseParticipant[];
+  payments: Payment[];
+  
+  // Current user state
+  currentUser: User | null;
+  isAuthenticated: boolean;
+  
+  // State setters
+  setUsers: (users: User[]) => void;
+  setGroups: (groups: Group[]) => void;
+  setExpenses: (expenses: Expense[]) => void;
+  setGroupMembers: (groupMembers: GroupMember[]) => void;
+  setExpenseParticipants: (expenseParticipants: ExpenseParticipant[]) => void;
+  setPayments: (payments: Payment[]) => void;
+  setCurrentUser: (user: User | null) => void;
+  
+  // Auth functions
+  login: (email: string, password: string) => Promise<User | null>;
+  signup: (name: string, email: string, password: string) => Promise<User | null>;
+  logout: () => void;
+}
+
+const AppContext = createContext<AppContextType | undefined>(undefined);
+
+export function AppProvider({ children }: { children: ReactNode }) {
+  // State for all entities
+  const [users, setUsers] = useState<User[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [groupMembers, setGroupMembers] = useState<GroupMember[]>([]);
+  const [expenseParticipants, setExpenseParticipants] = useState<ExpenseParticipant[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Load initial data
+  useEffect(() => {
+    async function loadInitialData() {
+      setLoading(true);
+      try {
+        // Check if user is already authenticated
+        const user = await getCurrentUser();
+        setCurrentUser(user);
+        
+        if (user) {
+          // Load all data
+          const usersData = await userService.getUsers();
+          setUsers(usersData);
+          
+          const groupsData = await groupService.getGroups();
+          setGroups(groupsData);
+          
+          const expensesData = await expenseService.getExpenses();
+          setExpenses(expensesData);
+          
+          const groupMembersData = await groupMemberService.getGroupMembers();
+          setGroupMembers(groupMembersData);
+          
+          const expenseParticipantsData = await expenseParticipantService.getExpenseParticipants();
+          setExpenseParticipants(expenseParticipantsData);
+          
+          const paymentsData = await paymentService.getPayments();
+          setPayments(paymentsData);
+        }
+      } catch (error) {
+        console.error('Error loading initial data:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    loadInitialData();
+  }, []);
+
+  // Login function
+  const login = async (email: string, password: string): Promise<User | null> => {
+    try {
+      const user = await signIn(email, password);
+      
+      if (user) {
+        setCurrentUser(user);
+        
+        // Reload all data
+        const usersData = await userService.getUsers();
+        setUsers(usersData);
+        
+        const groupsData = await groupService.getGroups();
+        setGroups(groupsData);
+        
+        const expensesData = await expenseService.getExpenses();
+        setExpenses(expensesData);
+        
+        const groupMembersData = await groupMemberService.getGroupMembers();
+        setGroupMembers(groupMembersData);
+        
+        const expenseParticipantsData = await expenseParticipantService.getExpenseParticipants();
+        setExpenseParticipants(expenseParticipantsData);
+        
+        const paymentsData = await paymentService.getPayments();
+        setPayments(paymentsData);
+      }
+      
+      return user;
+    } catch (error) {
+      console.error('Error during login:', error);
+      return null;
+    }
+  };
+
+  // Signup function
+  const signup = async (name: string, email: string, password: string): Promise<User | null> => {
+    try {
+      const user = await signUp(email, password, name);
+      
+      if (user) {
+        setCurrentUser(user);
+        setUsers(prevUsers => [...prevUsers, user]);
+      }
+      
+      return user;
+    } catch (error) {
+      console.error('Error during signup:', error);
+      return null;
+    }
+  };
+
+  // Logout function
+  const logout = async () => {
+    try {
+      await signOut();
+      setCurrentUser(null);
+      
+      // Clear all data
+      setUsers([]);
+      setGroups([]);
+      setExpenses([]);
+      setGroupMembers([]);
+      setExpenseParticipants([]);
+      setPayments([]);
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
+  };
+
+  return (
+    <AppContext.Provider
+      value={{
+        users,
+        groups,
+        expenses,
+        groupMembers,
+        expenseParticipants,
+        payments,
+        setUsers,
+        setGroups,
+        setExpenses,
+        setGroupMembers,
+        setExpenseParticipants,
+        setPayments,
+        currentUser,
+        setCurrentUser,
+        isAuthenticated: !!currentUser,
+        login,
+        signup,
+        logout,
+      }}
+    >
+      {!loading && children}
+    </AppContext.Provider>
+  );
+}
+
+export function useAppContext() {
+  const context = useContext(AppContext);
+  
+  if (context === undefined) {
+    throw new Error('useAppContext must be used within an AppProvider');
+  }
+  
+  return context;
+}

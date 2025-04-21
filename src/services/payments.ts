@@ -1,102 +1,124 @@
+import { supabase } from '@/lib/supabase';
 import { Payment } from '@/types';
-import { useAppContext } from '@/context/AppContext';
 
-// Create a custom hook for payment operations
-export function usePayments() {
-  const { payments, setPayments } = useAppContext();
+// Get all payments
+export async function getPayments(filter?: Partial<Payment>): Promise<Payment[]> {
+  try {
+    let query = supabase.from('payments').select('*');
 
-  /**
-   * Get all payments, optionally filtered by groupId
-   * @param groupId Optional group ID to filter payments
-   * @returns Array of Payment objects
-   */
-  const getPayments = (groupId?: string): Payment[] => {
-    // Filter by groupId if provided
-    if (groupId) {
-      return payments.filter(payment => payment.groupId === groupId);
+    // Apply filters if provided
+    if (filter) {
+      Object.entries(filter).forEach(([key, value]) => {
+        if (value !== undefined) {
+          query = query.eq(key, value);
+        }
+      });
     }
 
-    return payments;
-  };
+    const { data, error } = await query;
 
-  /**
-   * Get a payment by ID
-   * @param id Payment ID
-   * @returns Payment object or null if not found
-   */
-  const getPaymentById = (id: string): Payment | null => {
-    const payment = payments.find(payment => payment.id === id);
+    if (error) throw error;
 
-    return payment || null;
-  };
+    // Convert from database format to app format
+    return data.map(item => convertFromPaymentDB(item));
+  } catch (error) {
+    console.error(`Error getting payments:`, error);
+    return [];
+  }
+}
 
-  /**
-   * Create a new payment
-   * @param payment Payment data without ID
-   * @returns The created Payment object
-   */
-  const createPayment = (payment: Omit<Payment, 'id'>): Payment => {
-    const newPayment: Payment = {
-      id: `payment-${Math.random().toString(36).substr(2, 9)}`, // Generate random ID
-      ...payment,
-    };
+// Get a single payment by ID
+export async function getPaymentById(id: string): Promise<Payment | null> {
+  try {
+    const { data, error } = await supabase.from('payments').select('*').eq('id', id).single();
 
-    // Add to the AppContext state
-    setPayments(prevPayments => [...prevPayments, newPayment]);
+    if (error) throw error;
+    if (!data) return null;
 
-    return newPayment;
-  };
+    return convertFromPaymentDB(data);
+  } catch (error) {
+    console.error(`Error getting payment by ID:`, error);
+    return null;
+  }
+}
 
-  /**
-   * Update an existing payment
-   * @param id Payment ID
-   * @param payment Updated payment data
-   * @returns The updated Payment object or null if not found
-   */
-  const updatePayment = (id: string, payment: Omit<Payment, 'id'>): Payment | null => {
-    // Check if payment exists
-    const existingPaymentIndex = payments.findIndex(p => p.id === id);
-    if (existingPaymentIndex === -1) {
-      return null;
-    }
+// Create a new payment
+export async function createPayment(payment: Omit<Payment, 'id'>): Promise<Payment | null> {
+  try {
+    const { data, error } = await supabase
+      .from('payments')
+      .insert(convertToPaymentDB(payment))
+      .select()
+      .single();
 
-    // Create updated payment
-    const updatedPayment: Payment = {
-      id,
-      ...payment,
-    };
+    if (error) throw error;
 
-    // Update in the AppContext state
-    const updatedPayments = [...payments];
-    updatedPayments[existingPaymentIndex] = updatedPayment;
-    setPayments(updatedPayments);
+    return convertFromPaymentDB(data);
+  } catch (error) {
+    console.error(`Error creating payment:`, error);
+    return null;
+  }
+}
 
-    return updatedPayment;
-  };
+// Update an existing payment
+export async function updatePayment(
+  id: string,
+  payment: Partial<Payment>
+): Promise<Payment | null> {
+  try {
+    const { data, error } = await supabase
+      .from('payments')
+      .update(convertToPaymentDB(payment))
+      .eq('id', id)
+      .select()
+      .single();
 
-  /**
-   * Delete a payment by ID
-   * @param id Payment ID
-   * @returns Boolean indicating success
-   */
-  const deletePayment = (id: string): boolean => {
-    // Check if payment exists
-    const existingPaymentIndex = payments.findIndex(p => p.id === id);
-    if (existingPaymentIndex === -1) {
-      return false;
-    }
+    if (error) throw error;
 
-    // Remove from the AppContext state
-    setPayments(payments.filter(payment => payment.id !== id));
+    return convertFromPaymentDB(data);
+  } catch (error) {
+    console.error(`Error updating payment:`, error);
+    return null;
+  }
+}
+
+// Delete a payment
+export async function deletePayment(id: string): Promise<boolean> {
+  try {
+    const { error } = await supabase.from('payments').delete().eq('id', id);
+
+    if (error) throw error;
 
     return true;
-  };
+  } catch (error) {
+    console.error(`Error deleting payment:`, error);
+    return false;
+  }
+}
 
+// Helper function to convert database format to app format
+function convertFromPaymentDB(dbItem: unknown): Payment {
+  const item = dbItem as Record<string, unknown>;
   return {
-    getPayments,
-    getPaymentById,
-    createPayment,
-    updatePayment,
-    deletePayment,
+    id: item.id as string,
+    groupId: item.group_id as string,
+    fromUser: item.from_user as string,
+    toUser: item.to_user as string,
+    amount: parseFloat(item.amount as string),
+    date: (item.date as string) || new Date().toISOString().split('T')[0],
+  };
+}
+
+// Helper function to convert app format to database format
+function convertToPaymentDB(appItem: Partial<Payment>): Record<string, unknown> {
+  const { groupId, fromUser, toUser, ...rest } = appItem;
+  return {
+    ...rest,
+    group_id: groupId,
+    from_user: fromUser,
+    to_user: toUser,
+    // Add timestamp fields if missing
+    ...(appItem.id ? {} : { created_at: new Date().toISOString() }),
+    updated_at: new Date().toISOString(),
   };
 }

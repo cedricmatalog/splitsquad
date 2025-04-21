@@ -1,232 +1,118 @@
-/* eslint-disable */
 import { supabase } from '@/lib/supabase';
-import { Group, User } from '@/types';
+import { Group } from '@/types';
 
-// Add a type for the response structure
-type GroupMemberWithUser = {
-  user_id: string;
-  users: {
-    id: string;
-    name: string;
-    email: string;
-    avatar_url: string | null;
-  };
-};
-
-export async function getGroups(): Promise<Group[]> {
+// Get all groups
+export async function getGroups(filter?: Partial<Group>): Promise<Group[]> {
   try {
-    const { data, error } = await supabase
-      .from('groups')
-      .select(
-        `
-        *,
-        users!groups_created_by_fkey (
-          id,
-          name
-        )
-      `
-      )
-      .order('created_at', { ascending: false });
+    let query = supabase.from('groups').select('*');
+
+    // Apply filters if provided
+    if (filter) {
+      Object.entries(filter).forEach(([key, value]) => {
+        if (value !== undefined) {
+          query = query.eq(key, value);
+        }
+      });
+    }
+
+    const { data, error } = await query;
 
     if (error) throw error;
 
-    // Convert to our app Group type
-    return (data || []).map(item => ({
-      id: item.id,
-      name: item.name,
-      description: item.description || '',
-      createdBy: item.created_by,
-      date: item.date,
-    }));
+    // Convert from database format to app format
+    return data.map(item => convertFromGroupDB(item));
   } catch (error) {
-    console.error('Error fetching groups:', error);
+    console.error(`Error getting groups:`, error);
     return [];
   }
 }
 
+// Get a single group by ID
 export async function getGroupById(id: string): Promise<Group | null> {
   try {
-    const { data, error } = await supabase
-      .from('groups')
-      .select(
-        `
-        *,
-        users!groups_created_by_fkey (
-          id,
-          name
-        )
-      `
-      )
-      .eq('id', id)
-      .single();
+    const { data, error } = await supabase.from('groups').select('*').eq('id', id).single();
 
     if (error) throw error;
     if (!data) return null;
 
-    // Convert to our app Group type
-    return {
-      id: data.id,
-      name: data.name,
-      description: data.description || '',
-      createdBy: data.created_by,
-      date: data.date,
-    };
+    return convertFromGroupDB(data);
   } catch (error) {
-    console.error(`Error fetching group with id ${id}:`, error);
+    console.error(`Error getting group by ID:`, error);
     return null;
   }
 }
 
-export async function getGroupMembers(groupId: string): Promise<User[]> {
+// Create a new group
+export async function createGroup(group: Omit<Group, 'id'>): Promise<Group | null> {
   try {
     const { data, error } = await supabase
-      .from('group_members')
-      .select(
-        `
-        user_id,
-        users (
-          id,
-          name,
-          email,
-          avatar_url
-        )
-      `
-      )
-      .eq('group_id', groupId);
-
-    if (error) throw error;
-
-    // Convert to our app User type
-    // @ts-ignore Supabase data structure typing issue
-    return (data || []).map(item => ({
-      // @ts-ignore
-      id: item.users.id,
-      // @ts-ignore
-      name: item.users.name,
-      // @ts-ignore
-      email: item.users.email,
-      // @ts-ignore
-      avatar: item.users.avatar_url || '',
-    }));
-  } catch (error) {
-    console.error(`Error fetching members for group ${groupId}:`, error);
-    return [];
-  }
-}
-
-export async function createGroup(
-  name: string,
-  description: string,
-  createdBy: string,
-  memberIds: string[]
-): Promise<Group | null> {
-  try {
-    // Start a transaction by getting the Supabase connection
-    const { data: group, error: groupError } = await supabase
       .from('groups')
-      .insert({
-        name,
-        description,
-        created_by: createdBy,
-      })
+      .insert(convertToGroupDB(group))
       .select()
       .single();
 
-    if (groupError) throw groupError;
+    if (error) throw error;
 
-    // Ensure creator is in the members list
-    if (!memberIds.includes(createdBy)) {
-      memberIds.push(createdBy);
-    }
-
-    // Add group members
-    const groupMembers = memberIds.map(userId => ({
-      group_id: group.id,
-      user_id: userId,
-    }));
-
-    const { error: membersError } = await supabase.from('group_members').insert(groupMembers);
-
-    if (membersError) throw membersError;
-
-    // Return the created group
-    return {
-      id: group.id,
-      name: group.name,
-      description: group.description || '',
-      createdBy: group.created_by,
-      date: group.date,
-    };
+    return convertFromGroupDB(data);
   } catch (error) {
-    console.error('Error creating group:', error);
+    console.error(`Error creating group:`, error);
     return null;
   }
 }
 
-export async function updateGroup(
-  id: string,
-  name: string,
-  description: string,
-  memberIds?: string[]
-): Promise<Group | null> {
+// Update an existing group
+export async function updateGroup(id: string, group: Partial<Group>): Promise<Group | null> {
   try {
-    // Update group details
-    const { data: group, error: groupError } = await supabase
+    const { data, error } = await supabase
       .from('groups')
-      .update({
-        name,
-        description,
-        updated_at: new Date().toISOString(),
-      })
+      .update(convertToGroupDB(group))
       .eq('id', id)
       .select()
       .single();
 
-    if (groupError) throw groupError;
+    if (error) throw error;
 
-    // If members were provided, update them
-    if (memberIds && memberIds.length > 0) {
-      // First delete existing members
-      const { error: deleteError } = await supabase
-        .from('group_members')
-        .delete()
-        .eq('group_id', id);
-
-      if (deleteError) throw deleteError;
-
-      // Then add new members
-      const groupMembers = memberIds.map(userId => ({
-        group_id: id,
-        user_id: userId,
-      }));
-
-      const { error: membersError } = await supabase.from('group_members').insert(groupMembers);
-
-      if (membersError) throw membersError;
-    }
-
-    // Return the updated group
-    return {
-      id: group.id,
-      name: group.name,
-      description: group.description || '',
-      createdBy: group.created_by,
-      date: group.date,
-    };
+    return convertFromGroupDB(data);
   } catch (error) {
-    console.error(`Error updating group ${id}:`, error);
+    console.error(`Error updating group:`, error);
     return null;
   }
 }
 
+// Delete a group
 export async function deleteGroup(id: string): Promise<boolean> {
   try {
     const { error } = await supabase.from('groups').delete().eq('id', id);
 
     if (error) throw error;
+
     return true;
   } catch (error) {
-    console.error(`Error deleting group ${id}:`, error);
+    console.error(`Error deleting group:`, error);
     return false;
   }
+}
+
+// Helper function to convert database format to app format
+function convertFromGroupDB(dbItem: unknown): Group {
+  const item = dbItem as Record<string, unknown>;
+  return {
+    id: item.id as string,
+    name: item.name as string,
+    description: (item.description as string) || '',
+    createdBy: item.created_by as string,
+    date: (item.date as string) || new Date().toISOString().split('T')[0],
+  };
+}
+
+// Helper function to convert app format to database format
+function convertToGroupDB(appItem: Partial<Group>): Record<string, unknown> {
+  const { createdBy, ...rest } = appItem;
+  return {
+    ...rest,
+    created_by: createdBy,
+    // Add timestamp fields if missing
+    ...(appItem.id ? {} : { created_at: new Date().toISOString() }),
+    updated_at: new Date().toISOString(),
+  };
 }

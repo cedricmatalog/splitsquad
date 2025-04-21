@@ -1,33 +1,33 @@
 import { supabase } from '@/lib/supabase';
-import { Expense, ExpenseParticipant } from '@/types';
+import { Expense } from '@/types';
 
-export async function getExpenses(groupId?: string): Promise<Expense[]> {
+// Get all expenses
+export async function getExpenses(filter?: Partial<Expense>): Promise<Expense[]> {
   try {
-    let query = supabase.from('expenses').select('*').order('date', { ascending: false });
+    let query = supabase.from('expenses').select('*');
 
-    if (groupId) {
-      query = query.eq('group_id', groupId);
+    // Apply filters if provided
+    if (filter) {
+      Object.entries(filter).forEach(([key, value]) => {
+        if (value !== undefined) {
+          query = query.eq(key, value);
+        }
+      });
     }
 
     const { data, error } = await query;
 
     if (error) throw error;
 
-    // Convert to our app Expense type
-    return (data || []).map(item => ({
-      id: item.id,
-      groupId: item.group_id,
-      description: item.description,
-      amount: item.amount,
-      paidBy: item.paid_by,
-      date: item.date,
-    }));
+    // Convert from database format to app format
+    return data.map(item => convertFromExpenseDB(item));
   } catch (error) {
-    console.error('Error fetching expenses:', error);
+    console.error(`Error getting expenses:`, error);
     return [];
   }
 }
 
+// Get a single expense by ID
 export async function getExpenseById(id: string): Promise<Expense | null> {
   try {
     const { data, error } = await supabase.from('expenses').select('*').eq('id', id).single();
@@ -35,157 +35,89 @@ export async function getExpenseById(id: string): Promise<Expense | null> {
     if (error) throw error;
     if (!data) return null;
 
-    // Convert to our app Expense type
-    return {
-      id: data.id,
-      groupId: data.group_id,
-      description: data.description,
-      amount: data.amount,
-      paidBy: data.paid_by,
-      date: data.date,
-    };
+    return convertFromExpenseDB(data);
   } catch (error) {
-    console.error(`Error fetching expense with id ${id}:`, error);
+    console.error(`Error getting expense by ID:`, error);
     return null;
   }
 }
 
-export async function getExpenseParticipants(expenseId: string): Promise<ExpenseParticipant[]> {
+// Create a new expense
+export async function createExpense(expense: Omit<Expense, 'id'>): Promise<Expense | null> {
   try {
     const { data, error } = await supabase
-      .from('expense_participants')
-      .select('*')
-      .eq('expense_id', expenseId);
-
-    if (error) throw error;
-
-    // Convert to our app ExpenseParticipant type
-    return (data || []).map(item => ({
-      expenseId: item.expense_id,
-      userId: item.user_id,
-      share: item.share,
-    }));
-  } catch (error) {
-    console.error(`Error fetching participants for expense ${expenseId}:`, error);
-    return [];
-  }
-}
-
-export async function createExpense(
-  expense: Omit<Expense, 'id'>,
-  participants: Omit<ExpenseParticipant, 'expenseId'>[]
-): Promise<Expense | null> {
-  try {
-    // First create the expense
-    const { data: expenseData, error: expenseError } = await supabase
       .from('expenses')
-      .insert({
-        group_id: expense.groupId,
-        description: expense.description,
-        amount: expense.amount,
-        paid_by: expense.paidBy,
-        date: expense.date,
-      })
+      .insert(convertToExpenseDB(expense))
       .select()
       .single();
 
-    if (expenseError) throw expenseError;
+    if (error) throw error;
 
-    // Then create the participants
-    const participantsData = participants.map(participant => ({
-      expense_id: expenseData.id,
-      user_id: participant.userId,
-      share: participant.share,
-    }));
-
-    const { error: participantsError } = await supabase
-      .from('expense_participants')
-      .insert(participantsData);
-
-    if (participantsError) throw participantsError;
-
-    // Return the created expense
-    return {
-      id: expenseData.id,
-      groupId: expenseData.group_id,
-      description: expenseData.description,
-      amount: expenseData.amount,
-      paidBy: expenseData.paid_by,
-      date: expenseData.date,
-    };
+    return convertFromExpenseDB(data);
   } catch (error) {
-    console.error('Error creating expense:', error);
+    console.error(`Error creating expense:`, error);
     return null;
   }
 }
 
+// Update an existing expense
 export async function updateExpense(
   id: string,
-  expense: Omit<Expense, 'id'>,
-  participants: Omit<ExpenseParticipant, 'expenseId'>[]
+  expense: Partial<Expense>
 ): Promise<Expense | null> {
   try {
-    // First update the expense
-    const { data: expenseData, error: expenseError } = await supabase
+    const { data, error } = await supabase
       .from('expenses')
-      .update({
-        group_id: expense.groupId,
-        description: expense.description,
-        amount: expense.amount,
-        paid_by: expense.paidBy,
-        date: expense.date,
-        updated_at: new Date().toISOString(),
-      })
+      .update(convertToExpenseDB({ ...expense, id }))
       .eq('id', id)
       .select()
       .single();
 
-    if (expenseError) throw expenseError;
+    if (error) throw error;
 
-    // Delete old participants
-    const { error: deleteError } = await supabase
-      .from('expense_participants')
-      .delete()
-      .eq('expense_id', id);
-
-    if (deleteError) throw deleteError;
-
-    // Insert new participants
-    const participantsData = participants.map(participant => ({
-      expense_id: id,
-      user_id: participant.userId,
-      share: participant.share,
-    }));
-
-    const { error: participantsError } = await supabase
-      .from('expense_participants')
-      .insert(participantsData);
-
-    if (participantsError) throw participantsError;
-
-    // Return the updated expense
-    return {
-      id: expenseData.id,
-      groupId: expenseData.group_id,
-      description: expenseData.description,
-      amount: expenseData.amount,
-      paidBy: expenseData.paid_by,
-      date: expenseData.date,
-    };
+    return convertFromExpenseDB(data);
   } catch (error) {
-    console.error(`Error updating expense ${id}:`, error);
+    console.error(`Error updating expense:`, error);
     return null;
   }
 }
 
+// Delete a expense
 export async function deleteExpense(id: string): Promise<boolean> {
   try {
     const { error } = await supabase.from('expenses').delete().eq('id', id);
 
     if (error) throw error;
+
     return true;
   } catch (error) {
-    console.error(`Error deleting expense ${id}:`, error);
+    console.error(`Error deleting expense:`, error);
     return false;
   }
+}
+
+// Helper function to convert database format to app format
+function convertFromExpenseDB(dbItem: unknown): Expense {
+  const item = dbItem as Record<string, unknown>;
+  return {
+    id: item.id as string,
+    groupId: item.group_id as string,
+    description: item.description as string,
+    amount: parseFloat(item.amount as string),
+    paidBy: item.paid_by as string,
+    date: (item.date as string) || new Date().toISOString().split('T')[0],
+  };
+}
+
+// Helper function to convert app format to database format
+function convertToExpenseDB(appItem: Partial<Expense>): Record<string, unknown> {
+  const { groupId, paidBy, ...rest } = appItem;
+  return {
+    ...rest,
+    group_id: groupId,
+    paid_by: paidBy,
+    // Add timestamp fields if missing
+    ...(appItem.id ? {} : { created_at: new Date().toISOString() }),
+    updated_at: new Date().toISOString(),
+  };
 }
