@@ -42,6 +42,7 @@ interface AppContextType {
   login: (email: string, password: string) => Promise<User | null>;
   logout: () => Promise<void>;
   refreshData: () => Promise<void>;
+  lastError: string | null;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -57,13 +58,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [lastError, setLastError] = useState<string | null>(null);
 
-  // Function to refresh all data from Supabase
+  // Add a retry mechanism for API calls
+  const withRetry = async <T,>(fn: () => Promise<T>, retries = 3, delay = 1000): Promise<T> => {
+    try {
+      return await fn();
+    } catch (error) {
+      if (retries <= 1) throw error;
+      console.warn(`API call failed, retrying (${retries - 1} attempts left)...`, error);
+      await new Promise(resolve => setTimeout(resolve, delay));
+      return withRetry(fn, retries - 1, delay * 1.5);
+    }
+  };
+
+  // Modify the refreshData function to use retries
   const refreshData = useCallback(async () => {
     try {
       // Only fetch data if user is authenticated
       if (currentUser) {
         setIsLoading(true);
+
+        // Create an error state for UI feedback
         const [
           usersData,
           groupsData,
@@ -72,12 +88,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
           expenseParticipantsData,
           paymentsData,
         ] = await Promise.all([
-          getUsers(),
-          getGroups(),
-          getExpenses(),
-          getGroupMembers(),
-          getExpenseParticipants(),
-          getPayments(),
+          withRetry(() => getUsers()),
+          withRetry(() => getGroups()),
+          withRetry(() => getExpenses()),
+          withRetry(() => getGroupMembers()),
+          withRetry(() => getExpenseParticipants()),
+          withRetry(() => getPayments()),
         ]);
 
         setUsers(usersData);
@@ -89,6 +105,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       console.error('Error refreshing data:', error);
+      // Set error state that can be shown to the user
+      setLastError('Failed to load your data. Please check your connection and try again.');
     } finally {
       setIsLoading(false);
     }
@@ -172,6 +190,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       login,
       logout,
       refreshData,
+      lastError,
     }),
     [
       users,
@@ -185,6 +204,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       login,
       logout,
       refreshData,
+      lastError,
     ]
   );
 

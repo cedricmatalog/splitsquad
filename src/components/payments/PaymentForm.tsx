@@ -388,8 +388,8 @@ export function PaymentForm({
           )}
 
           {errors.submit && (
-            <div className="bg-red-50 p-3 rounded-md border border-red-200 text-red-600 flex items-center gap-2">
-              <AlertCircle className="h-5 w-5" />
+            <div className="mt-2 p-2 bg-red-50 border border-red-200 text-red-600 text-sm rounded-md flex items-center gap-2">
+              <AlertCircle className="h-4 w-4" />
               <span>{errors.submit}</span>
             </div>
           )}
@@ -403,14 +403,21 @@ export function PaymentForm({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting} className="min-w-[130px]">
+            <Button
+              type="submit"
+              className="gap-2 w-full"
+              disabled={isSubmitting || !isCurrentUserGroupMember}
+            >
               {isSubmitting ? (
-                <div className="flex items-center gap-2">
-                  <Loader2 className="animate-spin h-4 w-4" />
-                  <span>Recording...</span>
-                </div>
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Processing Payment...</span>
+                </>
               ) : (
-                'Record Payment'
+                <>
+                  <DollarSign className="h-4 w-4" />
+                  <span>Record Payment</span>
+                </>
               )}
             </Button>
           </div>

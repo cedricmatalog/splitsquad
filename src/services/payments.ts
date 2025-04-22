@@ -45,6 +45,19 @@ export async function getPaymentById(id: string): Promise<Payment | null> {
 // Create a new payment
 export async function createPayment(payment: Omit<Payment, 'id'>): Promise<Payment | null> {
   try {
+    // Validate payment data
+    if (!payment.groupId || !payment.fromUser || !payment.toUser || !payment.date) {
+      throw new Error('Missing required payment fields');
+    }
+
+    if (payment.amount <= 0) {
+      throw new Error('Payment amount must be greater than zero');
+    }
+
+    if (payment.fromUser === payment.toUser) {
+      throw new Error('Payment sender and receiver cannot be the same user');
+    }
+
     const { data, error } = await supabase
       .from('payments')
       .insert(convertToPaymentDB(payment))

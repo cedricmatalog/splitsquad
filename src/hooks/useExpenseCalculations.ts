@@ -2,6 +2,7 @@
 
 import { useAppContext } from '@/context/AppContext';
 import { Expense, ExpenseParticipant, Payment, User } from '@/types';
+import { useCallback } from 'react';
 
 interface UserBalance {
   userId: string;
@@ -43,55 +44,58 @@ export default function useExpenseCalculations() {
   };
 
   // Calculate balances for all users in a group
-  const calculateGroupBalances = (groupId: string): UserBalance[] => {
-    const members = getGroupMembers(groupId);
-    const groupExpenses = getGroupExpenses(groupId);
-    const groupPayments = getGroupPayments(groupId);
+  const calculateGroupBalances = useCallback(
+    (groupId: string): UserBalance[] => {
+      const members = getGroupMembers(groupId);
+      const groupExpenses = getGroupExpenses(groupId);
+      const groupPayments = getGroupPayments(groupId);
 
-    // Initialize balances for all members
-    const balances: Record<string, number> = {};
-    members.forEach(member => {
-      balances[member.id] = 0;
-    });
-
-    // Process all expenses
-    groupExpenses.forEach(expense => {
-      const paidBy = expense.paidBy;
-      const expenseParticipants = getExpenseParticipants(expense.id);
-
-      // Add the full amount to the payer's balance (they are owed this money)
-      balances[paidBy] = (balances[paidBy] || 0) + expense.amount;
-
-      // Subtract each participant's share from their balance (they owe this money)
-      expenseParticipants.forEach(participant => {
-        balances[participant.userId] = (balances[participant.userId] || 0) - participant.share;
+      // Initialize balances for all members
+      const balances: Record<string, number> = {};
+      members.forEach(member => {
+        balances[member.id] = 0;
       });
-    });
 
-    // Process all payments
-    // Note: Payment logic can be confusing. The key things to understand:
-    // 1. Positive balance = user is owed money
-    // 2. Negative balance = user owes money
-    // 3. When someone makes a payment (fromUser), they are paying off debt, so their balance should increase
-    // 4. When someone receives a payment (toUser), they are getting paid what's owed, so their balance should decrease
-    groupPayments.forEach(payment => {
-      // The person who paid (fromUser) is reducing their debt to the receiver
-      // (or if they're owed money, they're reducing what they're owed)
-      balances[payment.fromUser] = (balances[payment.fromUser] || 0) + payment.amount;
+      // Process all expenses
+      groupExpenses.forEach(expense => {
+        const paidBy = expense.paidBy;
+        const expenseParticipants = getExpenseParticipants(expense.id);
 
-      // The person who received (toUser) is having their balance reduced
-      // (they're either owed less or they owe more)
-      balances[payment.toUser] = (balances[payment.toUser] || 0) - payment.amount;
-    });
+        // Add the full amount to the payer's balance (they are owed this money)
+        balances[paidBy] = (balances[paidBy] || 0) + expense.amount;
 
-    // Convert to array with user details
-    return members.map(member => ({
-      userId: member.id,
-      userName: member.name,
-      // Round to 2 decimal places for currency
-      amount: parseFloat(balances[member.id].toFixed(2)),
-    }));
-  };
+        // Subtract each participant's share from their balance (they owe this money)
+        expenseParticipants.forEach(participant => {
+          balances[participant.userId] = (balances[participant.userId] || 0) - participant.share;
+        });
+      });
+
+      // Process all payments
+      // Note: Payment logic can be confusing. The key things to understand:
+      // 1. Positive balance = user is owed money
+      // 2. Negative balance = user owes money
+      // 3. When someone makes a payment (fromUser), they are paying off debt, so their balance should increase
+      // 4. When someone receives a payment (toUser), they are getting paid what's owed, so their balance should decrease
+      groupPayments.forEach(payment => {
+        // The person who paid (fromUser) is reducing their debt to the receiver
+        // (or if they're owed money, they're reducing what they're owed)
+        balances[payment.fromUser] = (balances[payment.fromUser] || 0) + payment.amount;
+
+        // The person who received (toUser) is having their balance reduced
+        // (they're either owed less or they owe more)
+        balances[payment.toUser] = (balances[payment.toUser] || 0) - payment.amount;
+      });
+
+      // Convert to array with user details
+      return members.map(member => ({
+        userId: member.id,
+        userName: member.name,
+        // Round to 2 decimal places for currency
+        amount: parseFloat(balances[member.id].toFixed(2)),
+      }));
+    },
+    [getGroupMembers, getGroupExpenses, getExpenseParticipants, getGroupPayments]
+  );
 
   // Calculate total owed to a specific user across all groups
   const calculateTotalOwedToUser = (userId: string): number => {

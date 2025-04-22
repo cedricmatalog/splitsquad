@@ -410,3 +410,38 @@ img.loading {
 .focus-ring {
   @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2;
 }
+
+/* Cross-browser compatibility fixes */
+@supports (-webkit-overflow-scrolling: touch) {
+  /* iOS-specific styles */
+  input, 
+  textarea,
+  select,
+  button {
+    font-size: 16px; /* Prevents iOS zoom on focus */
+  }
+  
+  .ios-momentum-scroll {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Fix common Firefox issues */
+@-moz-document url-prefix() {
+  /* Firefox-specific styles */
+  .firefox-thin-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+  }
+}
+
+/* Fix common Safari issues */
+@media not all and (min-resolution:.001dpcm) { 
+  @supports (-webkit-appearance:none) {
+    /* Safari-specific styles */
+    .safari-clip-fix {
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
+    }
+  }
+}
