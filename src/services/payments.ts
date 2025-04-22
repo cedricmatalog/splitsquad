@@ -106,17 +106,21 @@ function convertFromPaymentDB(dbItem: unknown): Payment {
     toUser: item.to_user as string,
     amount: parseFloat(item.amount as string),
     date: (item.date as string) || new Date().toISOString().split('T')[0],
+    paymentMethod: item.payment_method as string,
+    notes: item.notes as string,
   };
 }
 
 // Helper function to convert app format to database format
 function convertToPaymentDB(appItem: Partial<Payment>): Record<string, unknown> {
-  const { groupId, fromUser, toUser, ...rest } = appItem;
+  const { groupId, fromUser, toUser, paymentMethod, notes, ...rest } = appItem;
   return {
     ...rest,
     group_id: groupId,
     from_user: fromUser,
     to_user: toUser,
+    payment_method: paymentMethod,
+    notes: notes,
     // Add timestamp fields if missing
     ...(appItem.id ? {} : { created_at: new Date().toISOString() }),
     updated_at: new Date().toISOString(),

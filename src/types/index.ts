@@ -40,4 +40,6 @@ export interface Payment {
   amount: number;
   date: string;
   groupId: string;
-} 
+  paymentMethod?: string;
+  notes?: string;
+}

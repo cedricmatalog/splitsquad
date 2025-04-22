@@ -59,7 +59,24 @@ export function PaymentConfirmation({ payment, onDismiss }: PaymentConfirmationP
 
               <div className="text-sm text-gray-500">Date</div>
               <div className="text-sm font-medium">{formatDate(payment.date)}</div>
+
+              {payment.paymentMethod && (
+                <>
+                  <div className="text-sm text-gray-500">Payment Method</div>
+                  <div className="text-sm font-medium">
+                    {payment.paymentMethod.charAt(0).toUpperCase() +
+                      payment.paymentMethod.slice(1).replace('_', ' ')}
+                  </div>
+                </>
+              )}
             </div>
+
+            {payment.notes && (
+              <div className="mt-4">
+                <div className="text-sm text-gray-500 mb-1">Notes</div>
+                <div className="text-sm p-3 bg-gray-50 rounded-md">{payment.notes}</div>
+              </div>
+            )}
           </div>
 
           <p className="text-sm text-gray-500 text-center">

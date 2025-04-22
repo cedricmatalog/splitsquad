@@ -21,7 +21,35 @@ import { ExpenseList } from '@/components/expenses/ExpenseList';
 import { BalanceOverview } from '@/components/balances/BalanceOverview';
 import { DetailedBalances } from '@/components/balances/DetailedBalances';
 import { SettlementSuggestions } from '@/components/balances/SettlementSuggestions';
+import { PaymentHistory } from '@/components/payments/PaymentHistory';
 import { createGroupMember, deleteGroupMemberByKeys } from '@/services/group_members';
+import { cn } from '@/lib/utils';
+
+// Spinner component
+function Spinner({ className }: { className?: string }) {
+  return (
+    <svg
+      className={cn('animate-spin h-4 w-4', className)}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+    >
+      <circle
+        className="opacity-25"
+        cx="12"
+        cy="12"
+        r="10"
+        stroke="currentColor"
+        strokeWidth="4"
+      ></circle>
+      <path
+        className="opacity-75"
+        fill="currentColor"
+        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+      ></path>
+    </svg>
+  );
+}
 
 export default function GroupDetails({ params }: { params: Promise<{ id: string }> }) {
   const { id: groupId } = use(params);
@@ -38,6 +66,8 @@ export default function GroupDetails({ params }: { params: Promise<{ id: string 
   const [membersDialogOpen, setMembersDialogOpen] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
+  const [isJoining, setIsJoining] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
   const shareUrlRef = useRef<HTMLInputElement>(null);
 
   const group = groups.find(g => g.id === groupId);
@@ -78,33 +108,49 @@ export default function GroupDetails({ params }: { params: Promise<{ id: string 
   const handleJoinGroup = async () => {
     if (!currentUser) return;
 
-    // Create membership in Supabase
-    const newMemberData = { userId: currentUser.id, groupId };
-    const created = await createGroupMember(newMemberData);
-    if (created) {
-      // Update local context state with persisted member
-      setGroupMembers(prev => [...prev, created]);
-    } else {
-      console.error('Failed to join group');
+    setIsJoining(true);
+
+    try {
+      // Create membership in Supabase
+      const newMemberData = { userId: currentUser.id, groupId };
+      const created = await createGroupMember(newMemberData);
+      if (created) {
+        // Update local context state with persisted member
+        setGroupMembers(prev => [...prev, created]);
+      } else {
+        console.error('Failed to join group');
+      }
+    } catch (error) {
+      console.error('Error joining group:', error);
+    } finally {
+      setIsJoining(false);
     }
   };
 
   const handleLeaveGroup = async () => {
     if (!currentUser) return;
 
-    // Delete membership from Supabase
-    const deleted = await deleteGroupMemberByKeys(currentUser.id, groupId);
+    setIsLeaving(true);
 
-    if (deleted) {
-      // Update local context state
-      setGroupMembers(prev =>
-        prev.filter(member => !(member.userId === currentUser.id && member.groupId === groupId))
-      );
-      // Optionally, redirect or show a message
-      // router.push('/groups');
-    } else {
-      console.error('Failed to leave group');
-      // Optionally show error to user
+    try {
+      // Delete membership from Supabase
+      const deleted = await deleteGroupMemberByKeys(currentUser.id, groupId);
+
+      if (deleted) {
+        // Update local context state
+        setGroupMembers(prev =>
+          prev.filter(member => !(member.userId === currentUser.id && member.groupId === groupId))
+        );
+        // Optionally, redirect or show a message
+        // router.push('/groups');
+      } else {
+        console.error('Failed to leave group');
+        // Optionally show error to user
+      }
+    } catch (error) {
+      console.error('Error leaving group:', error);
+    } finally {
+      setIsLeaving(false);
     }
   };
 
@@ -170,7 +216,15 @@ export default function GroupDetails({ params }: { params: Promise<{ id: string 
                 </Button>
               </>
             ) : (
-              <Button onClick={handleJoinGroup}>Join Group</Button>
+              <Button onClick={handleJoinGroup} disabled={isJoining}>
+                {isJoining ? (
+                  <>
+                    <Spinner /> Joining...
+                  </>
+                ) : (
+                  'Join Group'
+                )}
+              </Button>
             )}
           </div>
         </div>
@@ -230,6 +284,7 @@ export default function GroupDetails({ params }: { params: Promise<{ id: string 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
           <TabsList className="mb-6">
             <TabsTrigger value="expenses">Expenses</TabsTrigger>
+            <TabsTrigger value="payments">Payments</TabsTrigger>
             <TabsTrigger value="balances">Balances</TabsTrigger>
             <TabsTrigger value="settlements">Settlements</TabsTrigger>
             <TabsTrigger value="members">Members</TabsTrigger>
@@ -237,6 +292,22 @@ export default function GroupDetails({ params }: { params: Promise<{ id: string 
 
           <TabsContent value="expenses">
             <ExpenseList expenses={groupExpenses} groupId={groupId} showGroupColumn={false} />
+          </TabsContent>
+
+          <TabsContent value="payments">
+            <div className="flex flex-col gap-4">
+              <div className="flex justify-end">
+                <Button asChild>
+                  <Link
+                    href={`/groups/${groupId}/payments/new`}
+                    className="flex items-center gap-1"
+                  >
+                    Record Payment
+                  </Link>
+                </Button>
+              </div>
+              <PaymentHistory groupId={groupId} />
+            </div>
           </TabsContent>
 
           <TabsContent value="balances">
@@ -277,8 +348,19 @@ export default function GroupDetails({ params }: { params: Promise<{ id: string 
                       {currentUser &&
                         currentUser.id === member.id &&
                         member.id !== group.createdBy && (
-                          <Button variant="outline" size="sm" onClick={handleLeaveGroup}>
-                            Leave Group
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleLeaveGroup}
+                            disabled={isLeaving}
+                          >
+                            {isLeaving ? (
+                              <>
+                                <Spinner /> Leaving...
+                              </>
+                            ) : (
+                              'Leave Group'
+                            )}
                           </Button>
                         )}
 
@@ -365,8 +447,35 @@ export default function GroupDetails({ params }: { params: Promise<{ id: string 
                   ref={shareUrlRef}
                   value={`https://splitsquad.example.com/invite/${groupId}`}
                   readOnly
+                  aria-label="Share URL"
                 />
-                <Button onClick={handleCopyShareLink}>{copySuccess ? 'Copied!' : 'Copy'}</Button>
+                <Button
+                  onClick={handleCopyShareLink}
+                  disabled={copySuccess}
+                  aria-label="Copy share link to clipboard"
+                >
+                  {copySuccess ? (
+                    <div className="flex items-center gap-2">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-4 w-4 text-green-500"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                      <span>Copied!</span>
+                    </div>
+                  ) : (
+                    'Copy'
+                  )}
+                </Button>
               </div>
               <p className="text-sm text-gray-500">
                 Share this link with friends to invite them to your group

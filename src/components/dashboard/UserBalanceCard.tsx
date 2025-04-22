@@ -43,7 +43,7 @@ export function UserBalanceCard() {
         color: 'text-green-600',
         bgColor: 'bg-green-50',
         border: 'border-green-100',
-        text: 'You are owed',
+        text: 'Others owe you',
         gradient: 'from-green-50 to-green-50/30',
         ringColor: 'ring-green-200/50',
       };
@@ -53,7 +53,7 @@ export function UserBalanceCard() {
         color: 'text-red-600',
         bgColor: 'bg-red-50',
         border: 'border-red-100',
-        text: 'You owe',
+        text: 'You owe others',
         gradient: 'from-red-50 to-red-50/30',
         ringColor: 'ring-red-200/50',
       };
@@ -99,15 +99,15 @@ export function UserBalanceCard() {
             <div className="space-y-1 sm:space-y-0">
               {totalOwed > 0 && (
                 <span className="block sm:inline truncate">
-                  You are owed{' '}
+                  Others owe you{' '}
                   <span className="text-green-600 font-medium">{formatAmount(totalOwed)}</span>
                   .{' '}
                 </span>
               )}
               {totalOwe > 0 && (
                 <span className="block sm:inline truncate">
-                  You owe <span className="text-red-600 font-medium">{formatAmount(totalOwe)}</span>
-                  .
+                  You owe others{' '}
+                  <span className="text-red-600 font-medium">{formatAmount(totalOwe)}</span>.
                 </span>
               )}
             </div>

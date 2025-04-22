@@ -76,8 +76,8 @@ export function ExpenseForm({
   useEffect(() => {
     if (!selectedGroupId) return;
 
-    // Only run this effect once on mount
-    if (isEditing && expenseParticipants) {
+    // Only initialize if we have a selected group and values not already set
+    if (isEditing && expenseParticipants && expenseParticipants.length > 0) {
       // If editing, use existing participants and their shares
       const members = groupMembers;
       const memberIds = members.map(member => member.id);
@@ -96,32 +96,24 @@ export function ExpenseForm({
       const firstShare = existingShares[0]?.share;
       const isEqual = existingShares.every(s => Math.abs(s.share - firstShare) < 0.01);
       setSplitType(isEqual ? 'equal' : 'custom');
-    } else if (amount && selectedGroupId) {
+    } else if (amount && selectedGroupId && shares.length === 0) {
       // For new expense, set up initial shares based on amount
-      handleAmountChange(amount);
-    } else {
-      // Just initialize empty shares for all members
-      setShares(
-        groupMembers.map(member => ({
-          userId: member.id,
-          share: 0,
-        }))
-      );
+      const amountValue = parseFloat(amount);
+      if (!isNaN(amountValue)) {
+        const memberIds = groupMembers.map(member => member.id);
+        const equalShares = calculateEqualShares(memberIds, amountValue);
+        setShares(equalShares);
+      }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty dependency array means this runs once on mount
-
-  // Update equal shares when amount changes
-  useEffect(() => {
-    if (splitType !== 'equal' || !selectedGroupId || !amount) return;
-
-    const amountValue = parseFloat(amount);
-    if (isNaN(amountValue)) return;
-
-    const memberIds = groupMembers.map(member => member.id);
-    const equalShares = calculateEqualShares(memberIds, amountValue);
-    setShares(equalShares);
-  }, [amount, splitType, selectedGroupId, calculateEqualShares, groupMembers]);
+  }, [
+    selectedGroupId,
+    groupMembers,
+    isEditing,
+    expenseParticipants,
+    amount,
+    calculateEqualShares,
+    shares.length,
+  ]); // Add dependencies for the effect
 
   // Handle selecting a group
   const handleGroupChange = useCallback(
@@ -313,10 +305,13 @@ export function ExpenseForm({
           ...(newParticipantsData as ExpenseParticipant[]),
         ]);
       } else {
+        // Add the new expense to context
         setExpenses(prev => [...prev, persistedExpense!]);
+        // Add the new participants to context
         setExpenseParticipants(prev => [...prev, ...(newParticipantsData as ExpenseParticipant[])]);
       }
 
+      // Navigate after state updates are done
       router.push(`/groups/${selectedGroupId}`);
     } catch (error) {
       console.error('Error saving expense:', error);

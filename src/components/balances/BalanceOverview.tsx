@@ -15,11 +15,8 @@ interface BalanceOverviewProps {
 
 export function BalanceOverview({ groupId, showPaymentButton = true }: BalanceOverviewProps) {
   const { currentUser } = useAppContext();
-  const { 
-    calculateGroupBalances, 
-    calculateTotalOwedToUser, 
-    calculateTotalUserOwes 
-  } = useExpenseCalculations();
+  const { calculateGroupBalances, calculateTotalOwedToUser, calculateTotalUserOwes } =
+    useExpenseCalculations();
   const [showPaymentForm, setShowPaymentForm] = useState(false);
 
   // Format with currency symbol
@@ -28,7 +25,7 @@ export function BalanceOverview({ groupId, showPaymentButton = true }: BalanceOv
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 2,
-      maximumFractionDigits: 2
+      maximumFractionDigits: 2,
     }).format(amount);
   };
 
@@ -45,7 +42,7 @@ export function BalanceOverview({ groupId, showPaymentButton = true }: BalanceOv
   if (groupId) {
     const balances = calculateGroupBalances(groupId);
     const userBalance = balances.find(b => b.userId === currentUser.id);
-    
+
     if (userBalance) {
       if (userBalance.amount < 0) {
         youOwe = Math.abs(userBalance.amount);
@@ -64,18 +61,18 @@ export function BalanceOverview({ groupId, showPaymentButton = true }: BalanceOv
   // This would be the user with the highest positive balance if current user owes money
   const getSuggestedPaymentInfo = () => {
     if (!groupId || !currentUser || netBalance >= 0) return null;
-    
+
     const balances = calculateGroupBalances(groupId);
     const positiveBalances = balances
       .filter(b => b.userId !== currentUser.id && b.amount > 0)
       .sort((a, b) => b.amount - a.amount);
-    
+
     if (positiveBalances.length === 0) return null;
-    
+
     // Suggest paying the person with the highest positive balance
     return {
       toUserId: positiveBalances[0].userId,
-      amount: Math.min(Math.abs(netBalance), positiveBalances[0].amount)
+      amount: Math.min(Math.abs(netBalance), positiveBalances[0].amount),
     };
   };
 
@@ -105,23 +102,22 @@ export function BalanceOverview({ groupId, showPaymentButton = true }: BalanceOv
               <span className="text-sm font-medium">Net balance</span>
               <div>
                 <Badge
-                  variant={netBalance < 0 ? 'destructive' : netBalance > 0 ? 'success' : 'secondary'}
+                  variant={
+                    netBalance < 0 ? 'destructive' : netBalance > 0 ? 'success' : 'secondary'
+                  }
                 >
                   {netBalance < 0
-                    ? `You owe ${formatCurrency(Math.abs(netBalance))}`
+                    ? `You owe others ${formatCurrency(Math.abs(netBalance))}`
                     : netBalance > 0
-                    ? `You are owed ${formatCurrency(netBalance)}`
-                    : 'Settled up'}
+                      ? `Others owe you ${formatCurrency(netBalance)}`
+                      : 'Settled up'}
                 </Badge>
               </div>
             </div>
 
             {showPaymentButton && youOwe > 0 && (
               <div className="mt-4">
-                <Button 
-                  className="w-full" 
-                  onClick={() => setShowPaymentForm(true)}
-                >
+                <Button className="w-full" onClick={() => setShowPaymentForm(true)}>
                   Record a Payment
                 </Button>
               </div>
@@ -131,7 +127,7 @@ export function BalanceOverview({ groupId, showPaymentButton = true }: BalanceOv
       </Card>
 
       {showPaymentForm && groupId && suggestedPayment && (
-        <div className="mt-6">
+        <div className="">
           <PaymentForm
             groupId={groupId}
             fromUserId={currentUser.id}

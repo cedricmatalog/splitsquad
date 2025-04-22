@@ -15,15 +15,8 @@ interface GroupBalance {
 }
 
 export default function useExpenseCalculations() {
-  const { 
-    users, 
-    groups, 
-    expenses, 
-    groupMembers, 
-    expenseParticipants, 
-    payments,
-    currentUser
-  } = useAppContext();
+  const { users, groups, expenses, groupMembers, expenseParticipants, payments, currentUser } =
+    useAppContext();
 
   // Get all expenses for a specific group
   const getGroupExpenses = (groupId: string): Expense[] => {
@@ -35,7 +28,7 @@ export default function useExpenseCalculations() {
     const memberIds = groupMembers
       .filter(member => member.groupId === groupId)
       .map(member => member.userId);
-    
+
     return users.filter(user => memberIds.includes(user.id));
   };
 
@@ -54,7 +47,7 @@ export default function useExpenseCalculations() {
     const members = getGroupMembers(groupId);
     const groupExpenses = getGroupExpenses(groupId);
     const groupPayments = getGroupPayments(groupId);
-    
+
     // Initialize balances for all members
     const balances: Record<string, number> = {};
     members.forEach(member => {
@@ -65,10 +58,10 @@ export default function useExpenseCalculations() {
     groupExpenses.forEach(expense => {
       const paidBy = expense.paidBy;
       const expenseParticipants = getExpenseParticipants(expense.id);
-      
+
       // Add the full amount to the payer's balance (they are owed this money)
       balances[paidBy] = (balances[paidBy] || 0) + expense.amount;
-      
+
       // Subtract each participant's share from their balance (they owe this money)
       expenseParticipants.forEach(participant => {
         balances[participant.userId] = (balances[participant.userId] || 0) - participant.share;
@@ -76,12 +69,19 @@ export default function useExpenseCalculations() {
     });
 
     // Process all payments
+    // Note: Payment logic can be confusing. The key things to understand:
+    // 1. Positive balance = user is owed money
+    // 2. Negative balance = user owes money
+    // 3. When someone makes a payment (fromUser), they are paying off debt, so their balance should increase
+    // 4. When someone receives a payment (toUser), they are getting paid what's owed, so their balance should decrease
     groupPayments.forEach(payment => {
-      // The person who paid (fromUser) has their balance decreased
-      balances[payment.fromUser] = (balances[payment.fromUser] || 0) - payment.amount;
-      
-      // The person who received (toUser) has their balance increased
-      balances[payment.toUser] = (balances[payment.toUser] || 0) + payment.amount;
+      // The person who paid (fromUser) is reducing their debt to the receiver
+      // (or if they're owed money, they're reducing what they're owed)
+      balances[payment.fromUser] = (balances[payment.fromUser] || 0) + payment.amount;
+
+      // The person who received (toUser) is having their balance reduced
+      // (they're either owed less or they owe more)
+      balances[payment.toUser] = (balances[payment.toUser] || 0) - payment.amount;
     });
 
     // Convert to array with user details
@@ -89,51 +89,47 @@ export default function useExpenseCalculations() {
       userId: member.id,
       userName: member.name,
       // Round to 2 decimal places for currency
-      amount: parseFloat(balances[member.id].toFixed(2))
+      amount: parseFloat(balances[member.id].toFixed(2)),
     }));
   };
 
   // Calculate total owed to a specific user across all groups
   const calculateTotalOwedToUser = (userId: string): number => {
     let totalOwed = 0;
-    
+
     // Get all groups this user is a member of
-    const userGroupIds = groupMembers
-      .filter(gm => gm.userId === userId)
-      .map(gm => gm.groupId);
-    
+    const userGroupIds = groupMembers.filter(gm => gm.userId === userId).map(gm => gm.groupId);
+
     // For each group, calculate balances and add any positive balance for this user
     userGroupIds.forEach(groupId => {
       const balances = calculateGroupBalances(groupId);
       const userBalance = balances.find(b => b.userId === userId);
-      
+
       if (userBalance && userBalance.amount > 0) {
         totalOwed += userBalance.amount;
       }
     });
-    
+
     return parseFloat(totalOwed.toFixed(2));
   };
 
   // Calculate total a user owes to others across all groups
   const calculateTotalUserOwes = (userId: string): number => {
     let totalOwes = 0;
-    
+
     // Get all groups this user is a member of
-    const userGroupIds = groupMembers
-      .filter(gm => gm.userId === userId)
-      .map(gm => gm.groupId);
-    
+    const userGroupIds = groupMembers.filter(gm => gm.userId === userId).map(gm => gm.groupId);
+
     // For each group, calculate balances and add any negative balance for this user
     userGroupIds.forEach(groupId => {
       const balances = calculateGroupBalances(groupId);
       const userBalance = balances.find(b => b.userId === userId);
-      
+
       if (userBalance && userBalance.amount < 0) {
         totalOwes += Math.abs(userBalance.amount);
       }
     });
-    
+
     return parseFloat(totalOwes.toFixed(2));
   };
 
@@ -141,16 +137,16 @@ export default function useExpenseCalculations() {
   const calculateAllGroupBalances = (): GroupBalance[] => {
     return groups.map(group => ({
       groupId: group.id,
-      balances: calculateGroupBalances(group.id)
+      balances: calculateGroupBalances(group.id),
     }));
   };
 
   // Calculate overall balance for the current user
   const calculateUserTotalBalance = (): number => {
     if (!currentUser) return 0;
-    
+
     let totalBalance = 0;
-    
+
     groups.forEach(group => {
       const groupBalances = calculateGroupBalances(group.id);
       const userBalance = groupBalances.find(balance => balance.userId === currentUser.id);
@@ -158,45 +154,55 @@ export default function useExpenseCalculations() {
         totalBalance += userBalance.amount;
       }
     });
-    
+
     return parseFloat(totalBalance.toFixed(2));
   };
 
   // Calculate simplified payments to settle debts
   const calculateSimplifiedPayments = (groupId: string) => {
     const balances = calculateGroupBalances(groupId);
-    const positiveBalances = balances.filter(b => b.amount > 0).sort((a, b) => b.amount - a.amount);
-    const negativeBalances = balances.filter(b => b.amount < 0).sort((a, b) => a.amount - b.amount);
-    
-    const payments: { from: string, fromName: string, to: string, toName: string, amount: number }[] = [];
-    
-    let i = 0;
-    let j = 0;
-    
-    while (i < positiveBalances.length && j < negativeBalances.length) {
-      const creditor = positiveBalances[i];
-      const debtor = negativeBalances[j];
-      
+    // Negative balances mean these users owe money
+    const debtors = balances.filter(b => b.amount < 0).sort((a, b) => a.amount - b.amount);
+    // Positive balances mean these users are owed money
+    const creditors = balances.filter(b => b.amount > 0).sort((a, b) => b.amount - a.amount);
+
+    const suggestedPayments: {
+      from: string;
+      fromName: string;
+      to: string;
+      toName: string;
+      amount: number;
+    }[] = [];
+
+    let i = 0; // creditor index
+    let j = 0; // debtor index
+
+    while (i < creditors.length && j < debtors.length) {
+      const creditor = creditors[i];
+      const debtor = debtors[j];
+
+      // Find the smaller of what's owed and what can be paid
       const amount = Math.min(creditor.amount, -debtor.amount);
-      
-      if (amount > 0.01) { // Ignore very small amounts
-        payments.push({
+
+      if (amount > 0.01) {
+        // Ignore very small amounts
+        suggestedPayments.push({
           from: debtor.userId,
           fromName: debtor.userName,
           to: creditor.userId,
           toName: creditor.userName,
-          amount: parseFloat(amount.toFixed(2))
+          amount: parseFloat(amount.toFixed(2)),
         });
       }
-      
+
       creditor.amount -= amount;
       debtor.amount += amount;
-      
+
       if (Math.abs(creditor.amount) < 0.01) i++;
       if (Math.abs(debtor.amount) < 0.01) j++;
     }
-    
-    return payments;
+
+    return suggestedPayments;
   };
 
   return {
@@ -209,6 +215,6 @@ export default function useExpenseCalculations() {
     calculateUserTotalBalance,
     calculateSimplifiedPayments,
     calculateTotalOwedToUser,
-    calculateTotalUserOwes
+    calculateTotalUserOwes,
   };
-} 
+}

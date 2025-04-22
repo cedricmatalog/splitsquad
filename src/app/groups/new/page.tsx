@@ -10,10 +10,12 @@ import { createGroupMember } from '@/services/group_members';
 
 export default function NewGroup() {
   const router = useRouter();
-  const { users, setGroupMembers, currentUser } = useAppContext();
+  const { users, setGroups, setGroupMembers, currentUser } = useAppContext();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async ({
+    name,
+    description,
     members,
     id: createdGroupId,
   }: {
@@ -29,6 +31,18 @@ export default function NewGroup() {
     setIsSubmitting(true);
 
     try {
+      // Add the new group to the context state
+      setGroups(prevGroups => [
+        ...prevGroups,
+        {
+          id: createdGroupId,
+          name,
+          description,
+          createdBy: currentUser.id,
+          date: new Date().toISOString(),
+        },
+      ]);
+
       const memberPromises = members.map(userId =>
         createGroupMember({ userId, groupId: createdGroupId })
       );
