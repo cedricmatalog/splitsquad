@@ -11,7 +11,7 @@ import Link from 'next/link';
 import { PlusCircle, DollarSign } from 'lucide-react';
 
 export default function PaymentsPage() {
-  const { groups, currentUser, isAuthenticated } = useAppContext();
+  const { groups, currentUser, isAuthenticated, groupMembers } = useAppContext();
   const router = useRouter();
 
   useEffect(() => {
@@ -24,15 +24,24 @@ export default function PaymentsPage() {
     return null;
   }
 
+  // Filter groups to only show those the user is a member of or created
+  const userGroups = groups.filter(
+    group =>
+      // User created the group
+      group.createdBy === currentUser.id ||
+      // User is a member of the group
+      groupMembers.some(member => member.userId === currentUser.id && member.groupId === group.id)
+  );
+
   return (
     <div className="container mx-auto py-4 sm:py-8 px-4 sm:px-6 max-w-6xl">
       <PageHeader
         title="Payment History"
         description="All your payments across all groups"
         action={
-          groups.length > 0 && (
+          userGroups.length > 0 && (
             <div className="flex flex-wrap justify-end gap-2">
-              {groups.slice(0, 2).map(group => (
+              {userGroups.slice(0, 2).map(group => (
                 <Button key={group.id} variant="outline" size="sm" asChild>
                   <Link
                     href={`/groups/${group.id}/payments/new`}
@@ -44,7 +53,7 @@ export default function PaymentsPage() {
                 </Button>
               ))}
 
-              {groups.length > 2 && (
+              {userGroups.length > 2 && (
                 <Button variant="outline" size="sm" asChild>
                   <Link href="/groups" className="flex items-center gap-1.5">
                     <span>View All</span>
@@ -60,7 +69,7 @@ export default function PaymentsPage() {
         {/* User-specific payments */}
         <PaymentHistory userId={currentUser.id} />
 
-        {groups.length === 0 ? (
+        {userGroups.length === 0 ? (
           <Card className="border hover:shadow-md transition-all duration-200">
             <CardContent className="py-8">
               <div className="text-center">
@@ -84,10 +93,10 @@ export default function PaymentsPage() {
       </div>
 
       {/* Mobile floating action button */}
-      {groups.length > 0 && (
+      {userGroups.length > 0 && (
         <div className="fixed right-4 bottom-20 md:hidden">
           <Button size="lg" className="h-14 w-14 rounded-full shadow-lg" asChild>
-            <Link href={`/groups/${groups[0].id}/payments/new`} aria-label="Make a payment">
+            <Link href={`/groups/${userGroups[0].id}/payments/new`} aria-label="Make a payment">
               <DollarSign size={24} />
             </Link>
           </Button>

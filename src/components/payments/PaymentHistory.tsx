@@ -49,7 +49,7 @@ interface PaymentHistoryProps {
 }
 
 export function PaymentHistory({ groupId, userId, limit }: PaymentHistoryProps) {
-  const { payments, users } = useAppContext();
+  const { payments, users, groupMembers, currentUser } = useAppContext();
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [isSorting, setIsSorting] = useState(false);
 
@@ -66,6 +66,17 @@ export function PaymentHistory({ groupId, userId, limit }: PaymentHistoryProps) 
       result = result.filter(payment => payment.fromUser === userId || payment.toUser === userId);
     }
 
+    // Filter payments to only include those from groups the current user is a member of
+    if (currentUser) {
+      // Get all groups the current user is a member of
+      const userGroupIds = groupMembers
+        .filter(member => member.userId === currentUser.id)
+        .map(member => member.groupId);
+
+      // Only include payments from groups the user is a member of
+      result = result.filter(payment => userGroupIds.includes(payment.groupId));
+    }
+
     // Sort by date
     result.sort((a, b) => {
       const dateA = new Date(a.date).getTime();
@@ -79,7 +90,7 @@ export function PaymentHistory({ groupId, userId, limit }: PaymentHistoryProps) 
     }
 
     return result;
-  }, [payments, groupId, userId, limit, sortDirection]);
+  }, [payments, groupId, userId, limit, sortDirection, groupMembers, currentUser]);
 
   // Format date
   const formatDate = (dateString: string) => {
