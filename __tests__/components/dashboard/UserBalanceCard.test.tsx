@@ -28,6 +28,7 @@ describe('UserBalanceCard', () => {
     (useExpenseCalculations as jest.Mock).mockReturnValue({
       calculateTotalOwedToUser: jest.fn().mockReturnValue(150.5),
       calculateTotalUserOwes: jest.fn().mockReturnValue(50),
+      calculateUserTotalBalance: jest.fn().mockReturnValue(100.5),
     });
 
     render(<UserBalanceCard />);
@@ -35,7 +36,7 @@ describe('UserBalanceCard', () => {
     // Check that the component renders
     expect(screen.getByText('Your Balance')).toBeInTheDocument();
     expect(screen.getByText('$100.50')).toBeInTheDocument(); // 150.50 - 50 = 100.50
-    expect(screen.getByText('Others owe you')).toBeInTheDocument();
+    expect(screen.getByText("You're owed money")).toBeInTheDocument();
   });
 
   it('renders correctly when user owes money', () => {
@@ -43,6 +44,7 @@ describe('UserBalanceCard', () => {
     (useExpenseCalculations as jest.Mock).mockReturnValue({
       calculateTotalOwedToUser: jest.fn().mockReturnValue(10),
       calculateTotalUserOwes: jest.fn().mockReturnValue(60.25),
+      calculateUserTotalBalance: jest.fn().mockReturnValue(-50.25),
     });
 
     render(<UserBalanceCard />);
@@ -50,7 +52,7 @@ describe('UserBalanceCard', () => {
     // Check that the component renders
     expect(screen.getByText('Your Balance')).toBeInTheDocument();
     expect(screen.getByText('$50.25')).toBeInTheDocument(); // 60.25 - 10 = 50.25
-    expect(screen.getByText('You owe others')).toBeInTheDocument();
+    expect(screen.getByText('You owe money')).toBeInTheDocument();
   });
 
   it('renders correctly when user is settled up', () => {
@@ -58,6 +60,7 @@ describe('UserBalanceCard', () => {
     (useExpenseCalculations as jest.Mock).mockReturnValue({
       calculateTotalOwedToUser: jest.fn().mockReturnValue(25),
       calculateTotalUserOwes: jest.fn().mockReturnValue(25),
+      calculateUserTotalBalance: jest.fn().mockReturnValue(0),
     });
 
     render(<UserBalanceCard />);
@@ -65,6 +68,6 @@ describe('UserBalanceCard', () => {
     // Check that the component renders
     expect(screen.getByText('Your Balance')).toBeInTheDocument();
     expect(screen.getByText('$0.00')).toBeInTheDocument();
-    expect(screen.getByText('All settled up')).toBeInTheDocument();
+    expect(screen.getByText('All settled up!')).toBeInTheDocument();
   });
 });
