@@ -10,6 +10,12 @@ import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Expense, ExpenseParticipant } from '@/types';
+import { createExpense, updateExpense } from '@/services/expenses';
+import {
+  createExpenseParticipant,
+  getExpenseParticipants,
+  deleteExpenseParticipantByKeys,
+} from '@/services/expense_participants';
 
 interface ExpenseFormProps {
   groupId?: string;
@@ -224,7 +230,7 @@ export function ExpenseForm({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!validateForm()) {
@@ -233,38 +239,92 @@ export function ExpenseForm({
 
     setIsSubmitting(true);
 
-    const expenseId = expense?.id || `expense-${Date.now()}`;
-    const newExpense = {
-      id: expenseId,
-      groupId: selectedGroupId,
-      description,
-      amount: parseFloat(amount),
-      paidBy,
-      date: date.toISOString(),
-    };
+    try {
+      const expenseData = {
+        groupId: selectedGroupId,
+        description,
+        amount: parseFloat(amount),
+        paidBy,
+        date: date.toISOString(),
+      };
 
-    const newParticipants = shares.map(share => ({
-      expenseId,
-      userId: share.userId,
-      share: share.share,
-    }));
+      let persistedExpense: Expense | null = null;
 
-    if (isEditing) {
-      // Update existing expense
-      setExpenses(prev => prev.map(e => (e.id === expenseId ? newExpense : e)));
-      // Remove old participants and add new ones
-      setExpenseParticipants(prev => [
-        ...prev.filter(p => p.expenseId !== expenseId),
-        ...newParticipants,
-      ]);
-    } else {
-      // Add new expense and participants
-      setExpenses(prev => [...prev, newExpense]);
-      setExpenseParticipants(prev => [...prev, ...newParticipants]);
+      if (isEditing && expense?.id) {
+        // Update existing expense
+        persistedExpense = await updateExpense(expense.id, expenseData);
+      } else {
+        // Create new expense
+        persistedExpense = await createExpense(expenseData);
+      }
+
+      if (!persistedExpense) {
+        throw new Error('Failed to save expense');
+      }
+
+      // Handle participants
+      const newParticipantsData = shares.map(share => ({
+        expenseId: persistedExpense!.id,
+        userId: share.userId,
+        share: share.share,
+      }));
+
+      if (isEditing && expense?.id) {
+        // For edits, fetch current participants, delete them, then create new ones
+        const currentParticipants = await getExpenseParticipants({ expenseId: expense.id });
+        // Use Promise.all for batch deletion (supabase client might handle this better)
+        // Assuming deleteExpenseParticipant takes expenseId and userId or a unique participant ID
+        // For simplicity, let's assume we need to fetch by expenseId and delete individually
+        // This is inefficient; a batch delete/update or transaction would be better
+
+        // Simplified: Delete all participants for this expense and recreate
+        // Find a better way if performance is critical
+        // await Promise.all(currentParticipants.map(p => deleteExpenseParticipant(p.id))); // Assumes participant has an `id`
+
+        // Use the new delete function
+        await Promise.all(
+          currentParticipants.map(p => deleteExpenseParticipantByKeys(p.expenseId, p.userId))
+        );
+
+        // Recreate participants
+        const createdParticipants = await Promise.all(
+          newParticipantsData.map(p => createExpenseParticipant(p))
+        );
+        if (createdParticipants.some(p => p === null)) {
+          throw new Error('Failed to update some participants');
+        }
+      } else {
+        // For new expenses, create all participants
+        const createdParticipants = await Promise.all(
+          newParticipantsData.map(p => createExpenseParticipant(p))
+        );
+        if (createdParticipants.some(p => p === null)) {
+          throw new Error('Failed to create some participants');
+        }
+      }
+
+      // Update local state AFTER successful Supabase operations
+      // Ideally, you'd refresh data from context after mutations
+      // For now, just mimic the previous behavior but with persisted data
+      if (isEditing) {
+        setExpenses(prev => prev.map(e => (e.id === persistedExpense!.id ? persistedExpense! : e)));
+        // TODO: Refresh participants from context instead of manual update
+        setExpenseParticipants(prev => [
+          ...prev.filter(p => p.expenseId !== persistedExpense!.id),
+          ...(newParticipantsData as ExpenseParticipant[]), // Type assertion might be needed
+        ]);
+      } else {
+        setExpenses(prev => [...prev, persistedExpense!]);
+        setExpenseParticipants(prev => [...prev, ...(newParticipantsData as ExpenseParticipant[])]);
+      }
+
+      router.push(`/groups/${selectedGroupId}`);
+    } catch (error) {
+      console.error('Error saving expense:', error);
+      setErrors({ submit: 'Failed to save expense. Please try again.' });
+    } finally {
+      setIsSubmitting(false);
     }
-
-    // Navigate to the group page
-    router.push(`/groups/${selectedGroupId}`);
   };
 
   const getUserName = (userId: string) => {

@@ -98,6 +98,23 @@ export async function deleteGroupMember(id: string): Promise<boolean> {
   }
 }
 
+// Delete a groupMember by userId and groupId
+export async function deleteGroupMemberByKeys(userId: string, groupId: string): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('group_members')
+      .delete()
+      .match({ user_id: userId, group_id: groupId });
+
+    if (error) throw error;
+
+    return true;
+  } catch (error) {
+    console.error(`Error deleting groupMember by keys:`, error);
+    return false;
+  }
+}
+
 // Helper function to convert database format to app format
 function convertFromGroupMemberDB(dbItem: unknown): GroupMember {
   const item = dbItem as Record<string, unknown>;

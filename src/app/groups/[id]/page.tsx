@@ -17,11 +17,11 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { GroupMember } from '@/types';
 import { ExpenseList } from '@/components/expenses/ExpenseList';
 import { BalanceOverview } from '@/components/balances/BalanceOverview';
 import { DetailedBalances } from '@/components/balances/DetailedBalances';
 import { SettlementSuggestions } from '@/components/balances/SettlementSuggestions';
+import { createGroupMember, deleteGroupMemberByKeys } from '@/services/group_members';
 
 export default function GroupDetails({ params }: { params: Promise<{ id: string }> }) {
   const { id: groupId } = use(params);
@@ -75,23 +75,37 @@ export default function GroupDetails({ params }: { params: Promise<{ id: string 
     });
   };
 
-  const handleJoinGroup = () => {
+  const handleJoinGroup = async () => {
     if (!currentUser) return;
 
-    const newMember: GroupMember = {
-      userId: currentUser.id,
-      groupId: groupId,
-    };
-
-    setGroupMembers(prev => [...prev, newMember]);
+    // Create membership in Supabase
+    const newMemberData = { userId: currentUser.id, groupId };
+    const created = await createGroupMember(newMemberData);
+    if (created) {
+      // Update local context state with persisted member
+      setGroupMembers(prev => [...prev, created]);
+    } else {
+      console.error('Failed to join group');
+    }
   };
 
-  const handleLeaveGroup = () => {
+  const handleLeaveGroup = async () => {
     if (!currentUser) return;
 
-    setGroupMembers(prev =>
-      prev.filter(member => !(member.userId === currentUser.id && member.groupId === groupId))
-    );
+    // Delete membership from Supabase
+    const deleted = await deleteGroupMemberByKeys(currentUser.id, groupId);
+
+    if (deleted) {
+      // Update local context state
+      setGroupMembers(prev =>
+        prev.filter(member => !(member.userId === currentUser.id && member.groupId === groupId))
+      );
+      // Optionally, redirect or show a message
+      // router.push('/groups');
+    } else {
+      console.error('Failed to leave group');
+      // Optionally show error to user
+    }
   };
 
   const handleCopyShareLink = () => {

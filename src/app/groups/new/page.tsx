@@ -6,20 +6,21 @@ import { useAppContext } from '@/context/AppContext';
 import { PageHeader } from '@/components/PageHeader';
 import { GroupForm } from '@/components/groups/GroupForm';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { createGroupMember } from '@/services/group_members';
 
 export default function NewGroup() {
   const router = useRouter();
-  const { users, setGroups, setGroupMembers, currentUser } = useAppContext();
+  const { users, setGroupMembers, currentUser } = useAppContext();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = ({
-    name,
-    description,
+  const handleSubmit = async ({
     members,
+    id: createdGroupId,
   }: {
     name: string;
     description: string;
     members: string[];
+    id: string;
   }) => {
     if (!currentUser) {
       return;
@@ -27,26 +28,27 @@ export default function NewGroup() {
 
     setIsSubmitting(true);
 
-    const newGroupId = `group-${Date.now()}`;
-    const newGroup = {
-      id: newGroupId,
-      name,
-      description,
-      createdBy: currentUser.id,
-      date: new Date().toISOString(),
-    };
+    try {
+      const memberPromises = members.map(userId =>
+        createGroupMember({ userId, groupId: createdGroupId })
+      );
 
-    const newGroupMembers = members.map(userId => ({
-      userId,
-      groupId: newGroupId,
-    }));
+      const createdMembers = await Promise.all(memberPromises);
 
-    // Add new group and members
-    setGroups(prev => [...prev, newGroup]);
-    setGroupMembers(prev => [...prev, ...newGroupMembers]);
+      if (createdMembers.some(m => m === null)) {
+        throw new Error('Failed to add some members to the group');
+      }
 
-    // Navigate to the new group page
-    router.push(`/groups/${newGroupId}`);
+      setGroupMembers(prev => [...prev, ...createdMembers.filter(m => m !== null)]);
+
+      router.push(`/groups/${createdGroupId}`);
+    } catch (error) {
+      console.error('Error adding members to group:', error);
+      alert('Group created, but failed to add members. Please add them manually.');
+      router.push(`/groups/${createdGroupId}`);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

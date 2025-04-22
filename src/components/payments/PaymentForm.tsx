@@ -2,13 +2,13 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { nanoid } from 'nanoid';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import { useAppContext } from '@/context/AppContext';
 import { Payment, User } from '@/types';
 import { PaymentConfirmation } from './PaymentConfirmation';
+import { createPayment } from '@/services/payments';
 
 interface PaymentFormProps {
   groupId: string;
@@ -67,7 +67,7 @@ export function PaymentForm({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!validateForm()) {
@@ -76,27 +76,38 @@ export function PaymentForm({
 
     setIsSubmitting(true);
 
-    // Create new payment object
-    const newPayment: Payment = {
-      id: `payment-${nanoid(6)}`,
-      fromUser,
-      toUser,
-      amount,
-      date: date.toISOString(),
-      groupId,
-    };
+    try {
+      // Create new payment object (without ID initially)
+      const newPaymentData = {
+        fromUser,
+        toUser,
+        amount,
+        date: date.toISOString(),
+        groupId,
+      };
 
-    // Save to context/storage
-    setPayments(prevPayments => [...prevPayments, newPayment]);
+      // Persist to Supabase
+      const persistedPayment = await createPayment(newPaymentData);
 
-    setIsSubmitting(false);
+      if (!persistedPayment) {
+        throw new Error('Failed to record payment');
+      }
 
-    // Show confirmation
-    setSubmittedPayment(newPayment);
+      // Update context with persisted data
+      setPayments(prevPayments => [...prevPayments, persistedPayment]);
 
-    // Callback if provided
-    if (onSuccess) {
-      onSuccess();
+      // Show confirmation with the persisted payment
+      setSubmittedPayment(persistedPayment);
+
+      // Callback if provided
+      if (onSuccess) {
+        onSuccess();
+      }
+    } catch (error) {
+      console.error('Error recording payment:', error);
+      setErrors({ submit: 'Failed to record payment. Please try again.' });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 

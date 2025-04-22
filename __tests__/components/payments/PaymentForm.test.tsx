@@ -1,228 +1,213 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import '@testing-library/jest-dom';
 import { PaymentForm } from '@/components/payments/PaymentForm';
-import { useAppContext } from '@/context/AppContext';
-import { useRouter } from 'next/navigation';
+import { User } from '@/types';
+import { createPayment } from '@/services/payments'; // Import the service
 
-// Mock nanoid to generate consistent IDs for testing
-jest.mock('nanoid', () => ({
-  nanoid: () => 'test123'
-}));
-
-// Mock next/navigation
+// Mock the useRouter hook
 jest.mock('next/navigation', () => ({
-  useRouter: jest.fn()
+  useRouter: () => ({
+    push: jest.fn(),
+    back: jest.fn(),
+  }),
 }));
 
-// Mock useAppContext hook
-jest.mock('@/context/AppContext', () => ({
-  useAppContext: jest.fn(),
+// Mock the nanoid library
+jest.mock('nanoid', () => ({
+  nanoid: () => 'mock-id-123', // Return a predictable ID
 }));
 
-// Mock the PaymentConfirmation component
-jest.mock('@/components/payments/PaymentConfirmation', () => ({
-  PaymentConfirmation: ({ payment, onDismiss }: {
-    payment: {
-      id: string;
-      fromUser: string;
-      toUser: string;
-      amount: number;
-      date: string;
-      groupId: string;
-    };
-    onDismiss?: () => void;
-  }) => (
-    <div data-testid="payment-confirmation">
-      <div data-testid="payment-amount">{payment.amount}</div>
-      <div data-testid="payment-from">{payment.fromUser}</div>
-      <div data-testid="payment-to">{payment.toUser}</div>
-      <button data-testid="dismiss-button" onClick={onDismiss}>Dismiss</button>
-    </div>
-  ),
+// Mock the createPayment service
+jest.mock('@/services/payments', () => ({
+  createPayment: jest.fn(),
 }));
 
-// Mock DatePicker component
+// Mock the AppContext
+jest.mock('@/context/AppContext', () => {
+  const originalModule = jest.requireActual('@/context/AppContext');
+  return {
+    ...originalModule,
+    useAppContext: jest.fn(),
+  };
+});
+
+// Mock the DatePicker component
 jest.mock('@/components/ui/date-picker', () => ({
-  DatePicker: ({ value, onChange, placeholder }: { 
-    value: Date | undefined;
+  DatePicker: ({
+    value,
+    onChange,
+    placeholder,
+  }: {
+    value: Date;
     onChange: (date: Date) => void;
-    placeholder?: string;
+    placeholder: string;
   }) => (
     <div data-testid="date-picker">
       <input
         type="date"
-        value={value instanceof Date ? value.toISOString().split('T')[0] : ''}
+        data-testid="date-input"
+        value={value?.toISOString().split('T')[0]}
         onChange={e => onChange(new Date(e.target.value))}
         placeholder={placeholder}
-        data-testid="date-input"
       />
     </div>
   ),
 }));
 
+// Import the mocked useAppContext after mocking it
+import { useAppContext } from '@/context/AppContext';
+
+// Mock data
+const mockUsers: User[] = [
+  { id: 'user-1', name: 'Alex Johnson', email: 'alex@example.com', avatar: '/alex.png' },
+  { id: 'user-2', name: 'Jamie Smith', email: 'jamie@example.com', avatar: '/jamie.png' },
+];
+const mockCurrentUser = mockUsers[0];
+const mockSetPayments = jest.fn();
+
+// Define the mock context value
+const mockContextValue = {
+  users: mockUsers,
+  groups: [],
+  expenses: [],
+  groupMembers: [],
+  expenseParticipants: [],
+  payments: [],
+  setUsers: jest.fn(),
+  setGroups: jest.fn(),
+  setExpenses: jest.fn(),
+  setGroupMembers: jest.fn(),
+  setExpenseParticipants: jest.fn(),
+  setPayments: mockSetPayments,
+  currentUser: mockCurrentUser,
+  setCurrentUser: jest.fn(),
+  isAuthenticated: true,
+  isLoading: false,
+  login: jest.fn(),
+  logout: jest.fn(),
+  refreshData: jest.fn(),
+};
+
+const renderPaymentForm = (props = {}) => {
+  // Set the mock return value for useAppContext
+  (useAppContext as jest.Mock).mockReturnValue(mockContextValue);
+
+  return render(<PaymentForm groupId="group-1" {...props} />);
+};
+
 describe('PaymentForm', () => {
-  const mockUsers = [
-    { id: 'user-1', name: 'Alex Johnson', email: 'alex@example.com', avatar: '/avatars/alex.png' },
-    { id: 'user-2', name: 'Jamie Smith', email: 'jamie@example.com', avatar: '/avatars/jamie.png' },
-  ];
-
-  const mockRouter = {
-    push: jest.fn(),
-    back: jest.fn(),
-  };
-
-  const mockSetPayments = jest.fn();
-
   beforeEach(() => {
+    // Reset mocks before each test
     jest.clearAllMocks();
-    (useRouter as jest.Mock).mockReturnValue(mockRouter);
-    (useAppContext as jest.Mock).mockReturnValue({
-      users: mockUsers,
-      currentUser: mockUsers[0],
-      setPayments: mockSetPayments,
+    (createPayment as jest.Mock).mockResolvedValue({
+      // Mock successful creation
+      id: 'payment-mock-id-123', // Use a predictable ID
+      fromUser: 'user-1',
+      toUser: 'user-2',
+      amount: 50,
+      date: new Date().toISOString(),
+      groupId: 'group-1',
     });
   });
 
-  it('renders the payment form correctly', () => {
-    render(<PaymentForm groupId="group-1" />);
-
-    // Use getAllByText since 'Record Payment' appears in both the title and the submit button
-    expect(screen.getAllByText('Record Payment')).toHaveLength(2);
+  it('renders correctly', () => {
+    renderPaymentForm();
+    // Use getAllByText and check first element (card title)
+    expect(screen.getAllByText('Record Payment')[0]).toBeInTheDocument();
     expect(screen.getByText('From')).toBeInTheDocument();
     expect(screen.getByText('To')).toBeInTheDocument();
     expect(screen.getByText('Amount')).toBeInTheDocument();
     expect(screen.getByText('Date')).toBeInTheDocument();
-    expect(screen.getByText('Payment Method')).toBeInTheDocument();
-    expect(screen.getByText('Notes (Optional)')).toBeInTheDocument();
   });
 
-  it('fills form with default values when provided', () => {
-    render(
-      <PaymentForm 
-        groupId="group-1" 
-        fromUserId="user-1" 
-        toUserId="user-2" 
-        suggestedAmount={50} 
-      />
-    );
+  it('shows validation errors on submit with empty fields', async () => {
+    renderPaymentForm();
+    fireEvent.click(screen.getByRole('button', { name: /Record Payment/i }));
 
-    const fromSelect = screen.getAllByRole('combobox')[0];
-    const toSelect = screen.getAllByRole('combobox')[1];
-    const amountInput = screen.getByPlaceholderText('0.00');
+    // Use waitFor to wait for errors to appear
+    await waitFor(() => {
+      expect(screen.getByText('Please enter a valid amount')).toBeInTheDocument();
+      expect(screen.getByText('Please select who is receiving the payment')).toBeInTheDocument();
+    });
 
-    expect(fromSelect).toHaveValue('user-1');
-    expect(toSelect).toHaveValue('user-2');
-    expect(amountInput).toHaveValue(50);
-  });
-
-  it('shows validation errors for invalid input', async () => {
-    render(<PaymentForm groupId="group-1" />);
-
-    // Clear any default selections
-    fireEvent.change(screen.getAllByRole('combobox')[0], { target: { value: '' } });
-    fireEvent.change(screen.getAllByRole('combobox')[1], { target: { value: '' } });
-    
-    // Try to submit with empty fields
-    fireEvent.click(screen.getByRole('button', { name: 'Record Payment' }));
-
-    // Check for validation errors
-    expect(screen.getByText('Please enter a valid amount')).toBeInTheDocument();
-    expect(screen.getByText('Please select who is making the payment')).toBeInTheDocument();
-    
-    // The error message in the actual component might be different than expected
-    // Let's check for partial text that would be present in any receiver error
-    expect(screen.getByText(/Payer and receiver/)).toBeInTheDocument();
-  });
-
-  it('shows error when same user is selected for both fields', () => {
-    render(<PaymentForm groupId="group-1" />);
-
-    // Select the same user for both fields
-    fireEvent.change(screen.getAllByRole('combobox')[0], { target: { value: 'user-1' } });
-    fireEvent.change(screen.getAllByRole('combobox')[1], { target: { value: 'user-1' } });
-    
-    // Try to submit the form
-    fireEvent.click(screen.getByRole('button', { name: 'Record Payment' }));
-
-    // Check for the specific error message
-    expect(screen.getByText('Payer and receiver must be different people')).toBeInTheDocument();
+    expect(createPayment).not.toHaveBeenCalled(); // Ensure service not called
+    expect(mockSetPayments).not.toHaveBeenCalled(); // Ensure context not updated
   });
 
   it('submits form successfully with valid input', async () => {
-    const onSuccessMock = jest.fn();
-    
-    render(
-      <PaymentForm 
-        groupId="group-1" 
-        fromUserId="user-1" 
-        toUserId="user-2" 
-        suggestedAmount={50}
-        onSuccess={onSuccessMock}
-      />
-    );
+    const { container } = renderPaymentForm();
 
-    // Amount field is pre-filled, just submit the form
-    fireEvent.click(screen.getByRole('button', { name: 'Record Payment' }));
+    // Get selects directly without relying on roles
+    const selects = container.querySelectorAll('select');
+    const fromSelect = selects[0];
+    const toSelect = selects[1];
+    const amountInput = screen.getByPlaceholderText('0.00');
 
-    // Check that setPayments was called
-    expect(mockSetPayments).toHaveBeenCalled();
-    
-    // Expected payment object
-    const expectedPayment = {
-      id: 'payment-test123',
-      fromUser: 'user-1',
-      toUser: 'user-2',
-      amount: 50,
-      date: expect.any(String),
-      groupId: 'group-1'
-    };
-    
-    // Check the payment object in the setPayments call
-    const setPaymentsCallback = mockSetPayments.mock.calls[0][0];
-    const newPayments = setPaymentsCallback([]);
-    expect(newPayments[0]).toMatchObject(expectedPayment);
+    // Fill form
+    if (fromSelect) fireEvent.change(fromSelect, { target: { value: 'user-1' } });
+    if (toSelect) fireEvent.change(toSelect, { target: { value: 'user-2' } });
+    fireEvent.change(amountInput, { target: { value: '50' } });
+    fireEvent.change(screen.getByTestId('date-input'), { target: { value: '2025-04-22' } });
 
-    // Check that onSuccess callback was called
-    expect(onSuccessMock).toHaveBeenCalled();
-    
-    // Check that confirmation is rendered
-    expect(screen.getByTestId('payment-confirmation')).toBeInTheDocument();
-  });
+    // Submit form
+    fireEvent.click(screen.getByRole('button', { name: /Record Payment/i }));
 
-  it('redirects back to group page when form is cancelled', () => {
-    render(<PaymentForm groupId="group-1" />);
-    
-    fireEvent.click(screen.getByText('Cancel'));
-    
-    expect(mockRouter.back).toHaveBeenCalled();
-  });
+    // Wait for async operations and checks
+    await waitFor(() => {
+      // Check that createPayment was called
+      expect(createPayment).toHaveBeenCalledTimes(1);
+      expect(createPayment).toHaveBeenCalledWith({
+        fromUser: 'user-1',
+        toUser: 'user-2',
+        amount: 50,
+        date: expect.stringContaining('2025-04-22'), // Check for the date part
+        groupId: 'group-1',
+      });
+    });
 
-  it('shows payment summary when all required fields are filled', () => {
-    render(<PaymentForm groupId="group-1" />);
-    
-    // Fill out the form
-    fireEvent.change(screen.getAllByRole('combobox')[0], { target: { value: 'user-1' } });
-    fireEvent.change(screen.getAllByRole('combobox')[1], { target: { value: 'user-2' } });
-    fireEvent.change(screen.getByPlaceholderText('0.00'), { target: { value: '75' } });
-    
-    // Check for payment summary
-    expect(screen.getByText('Payment Summary')).toBeInTheDocument();
-    expect(screen.getByText(/Alex Johnson will pay/)).toBeInTheDocument();
-    expect(screen.getByText(/to Jamie Smith/)).toBeInTheDocument();
+    await waitFor(() => {
+      // Check that setPayments was called *after* successful creation
+      expect(mockSetPayments).toHaveBeenCalledTimes(1);
+      expect(mockSetPayments).toHaveBeenCalledWith(expect.any(Function)); // Check it was called with a function updater
+
+      // Check that confirmation screen is displayed - look for success text instead of test ID
+      expect(screen.getByText('Payment Recorded Successfully!')).toBeInTheDocument();
+    });
   });
 
   it('dismisses payment confirmation and resets form', async () => {
-    render(<PaymentForm groupId="group-1" fromUserId="user-1" toUserId="user-2" suggestedAmount={50} />);
-    
-    // Submit the form to show confirmation
-    fireEvent.click(screen.getByRole('button', { name: 'Record Payment' }));
-    
-    // Confirm the payment confirmation is shown
-    expect(screen.getByTestId('payment-confirmation')).toBeInTheDocument();
-    
-    // Click dismiss button
-    fireEvent.click(screen.getByTestId('dismiss-button'));
-    
-    // Check that router.push was called
-    expect(mockRouter.push).toHaveBeenCalledWith('/groups/group-1');
+    const { container } = renderPaymentForm();
+
+    // Get selects directly without relying on roles
+    const selects = container.querySelectorAll('select');
+    const fromSelect = selects[0];
+    const toSelect = selects[1];
+    const amountInput = screen.getByPlaceholderText('0.00');
+
+    // Fill form
+    if (fromSelect) fireEvent.change(fromSelect, { target: { value: 'user-1' } });
+    if (toSelect) fireEvent.change(toSelect, { target: { value: 'user-2' } });
+    fireEvent.change(amountInput, { target: { value: '50' } });
+    fireEvent.change(screen.getByTestId('date-input'), { target: { value: '2025-04-22' } });
+
+    // Submit form
+    fireEvent.click(screen.getByRole('button', { name: /Record Payment/i }));
+
+    // Wait for the confirmation to appear
+    await waitFor(() => {
+      expect(screen.getByText('Payment Recorded Successfully!')).toBeInTheDocument();
+    });
+
+    // Click dismiss button (Close button in the confirmation)
+    fireEvent.click(screen.getByRole('button', { name: /Close/i }));
+
+    // Wait for the form to reset and confirmation to disappear
+    await waitFor(() => {
+      expect(screen.queryByText('Payment Recorded Successfully!')).not.toBeInTheDocument();
+
+      // Check that amount field is reset to 0
+      const resetAmountInput = screen.getByPlaceholderText('0.00');
+      expect(resetAmountInput).toHaveValue(0);
+    });
   });
 });

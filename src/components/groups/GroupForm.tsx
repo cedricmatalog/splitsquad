@@ -6,11 +6,17 @@ import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { createGroup } from '@/services/groups';
 
 interface GroupFormProps {
   users: User[];
   currentUserId: string | undefined;
-  onSubmit: (formData: { name: string; description: string; members: string[] }) => void;
+  onSubmit: (formData: {
+    name: string;
+    description: string;
+    members: string[];
+    id: string;
+  }) => void;
   isSubmitting: boolean;
 }
 
@@ -41,18 +47,35 @@ export function GroupForm({ users, currentUserId, onSubmit, isSubmitting }: Grou
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!validateForm()) {
       return;
     }
 
-    onSubmit({
+    if (!currentUserId) {
+      alert('No current user. Please log in again.');
+      return;
+    }
+    const groupData = {
       name,
       description,
-      members: selectedMembers,
-    });
+      createdBy: currentUserId,
+      date: new Date().toISOString(),
+    };
+    const createdGroup = await createGroup(groupData);
+    if (createdGroup) {
+      onSubmit({
+        name: createdGroup.name,
+        description: createdGroup.description,
+        members: selectedMembers,
+        id: createdGroup.id,
+      });
+    } else {
+      // Optionally show error to user
+      alert('Failed to create group. Please try again.');
+    }
   };
 
   const toggleMember = (userId: string) => {
