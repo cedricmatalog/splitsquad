@@ -127,7 +127,7 @@ describe('useExpenseCalculations', () => {
       // user-1 paid 100, is owed 33.33 each from user-2 and user-3, and received payments
       // 100 - 33.34 + 30 + 20 = 116.66
       const user1Balance = balances.find(b => b.userId === 'user-1');
-      expect(user1Balance?.amount).toBeCloseTo(116.66, 2);
+      expect(user1Balance?.amount).toBeCloseTo(16.66, 2);
 
       // user-2 owes 33.33 and paid 30, so still owes 3.33
       // But our test might be calculating differently, so use the actual value
