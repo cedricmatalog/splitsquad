@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { signUp } from '@/services/auth';
 import { useAppContext } from '@/context/AppContext';
 
-export default function SignUp() {
+// Component that uses searchParams - wrap in Suspense
+function SignUpWithSearchParams() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -238,5 +239,24 @@ export default function SignUp() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Loading fallback for Suspense
+function LoadingSignUpPage() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-gray-100">
+      <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow-md text-center">
+        <h2 className="text-2xl">Loading...</h2>
+      </div>
+    </div>
+  );
+}
+
+export default function SignUp() {
+  return (
+    <Suspense fallback={<LoadingSignUpPage />}>
+      <SignUpWithSearchParams />
+    </Suspense>
   );
 }
