@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { signUp } from '@/services/auth';
+import { useAppContext } from '@/context/AppContext';
 
 export default function SignUp() {
   const [email, setEmail] = useState('');
@@ -13,8 +14,11 @@ export default function SignUp() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [redirectInfo, setRedirectInfo] = useState<string | null>(null);
 
   const router = useRouter();
+  const { login } = useAppContext();
+  const searchParams = useSearchParams();
 
   const validateEmail = (email: string) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -65,27 +69,32 @@ export default function SignUp() {
         return;
       }
 
-      // Look at Supabase auth response to see if email confirmation is needed
-      // Since we redirect to login after email confirmation, we assume email confirmation is required
-      setSuccess(
-        'Account created successfully! Check your email to confirm your account, then log in with your new credentials.'
-      );
+      // Check if there's a redirect URL to set a more specific success message
+      const redirectUrl = localStorage.getItem('redirectAfterLogin');
+      if (redirectUrl && redirectUrl.includes('/groups/')) {
+        setSuccess('Account created successfully! Redirecting you to join the group...');
+      } else {
+        setSuccess('Account created successfully! Logging you in...');
+      }
 
-      // Don't redirect yet, let the user see the confirmation message
-      setTimeout(() => {
-        // Get the redirect URL from localStorage if it exists
-        let redirectUrl = '';
-        if (typeof window !== 'undefined') {
-          redirectUrl = localStorage.getItem('redirectAfterLogin') || '';
-        }
+      // Immediately log the user in instead of redirecting to login page
+      const loggedInUser = await login(email, password);
 
-        // Pass the redirect URL to the login page as a query parameter
+      if (loggedInUser) {
+        // Check if there's a redirect URL in localStorage (for group invites)
+        const redirectUrl = localStorage.getItem('redirectAfterLogin');
         if (redirectUrl) {
-          router.push(`/login?redirect=${encodeURIComponent(redirectUrl)}`);
+          // Clear the redirect URL from localStorage
+          localStorage.removeItem('redirectAfterLogin');
+          // Redirect to the saved URL (group page)
+          router.push(redirectUrl);
         } else {
-          router.push('/login');
+          // Default redirect to dashboard
+          router.push('/dashboard');
         }
-      }, 3000);
+      } else {
+        setError('Account created but automatic login failed. Please go to the login page.');
+      }
     } catch (err: unknown) {
       console.error('Error during signup:', err);
       if (
@@ -110,12 +119,20 @@ export default function SignUp() {
 
   // Check if there's a redirect pending when the component loads
   useEffect(() => {
-    // If we landed on signup page with a redirect pending, keep it for after signup
-    if (typeof window !== 'undefined') {
-      // We don't need to do anything special - just ensure redirectAfterLogin persists
-      // Login page will handle the redirect after successful authentication
+    // Check if we have a redirect parameter from login page
+    const redirectParam = searchParams.get('redirect');
+    if (redirectParam) {
+      // Store it in localStorage to use after signup
+      localStorage.setItem('redirectAfterLogin', redirectParam);
+      setRedirectInfo(`After signup, you'll be redirected to join the group.`);
+    } else if (typeof window !== 'undefined') {
+      // Check if there's already a redirect URL in localStorage
+      const storedRedirect = localStorage.getItem('redirectAfterLogin');
+      if (storedRedirect && storedRedirect.includes('/groups/')) {
+        setRedirectInfo(`After signup, you'll be redirected to join the group.`);
+      }
     }
-  }, []);
+  }, [searchParams]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-100">
@@ -124,6 +141,10 @@ export default function SignUp() {
           <h1 className="text-3xl font-bold">Create an Account</h1>
           <p className="mt-2 text-gray-600">Join SplitSquad to start splitting expenses</p>
         </div>
+
+        {redirectInfo && (
+          <div className="p-3 bg-blue-50 text-blue-700 rounded-md text-sm">{redirectInfo}</div>
+        )}
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && <div className="p-3 bg-red-50 text-red-500 rounded-md text-sm">{error}</div>}

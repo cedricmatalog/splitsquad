@@ -24,7 +24,6 @@ export async function signUp(email: string, password: string, name: string): Pro
       password,
       options: {
         data: { name },
-        emailRedirectTo: `${window.location.origin}/login`, // Redirect URL after email confirmation
       },
     });
 
@@ -41,23 +40,9 @@ export async function signUp(email: string, password: string, name: string): Pro
     console.log(`Auth signup successful for ${email}, user ID: ${authData.user.id}`);
     console.log('User needs email confirmation:', !authData.user.email_confirmed_at);
 
-    // For testing/development only - force email confirmation
-    if (!authData.user.email_confirmed_at && process.env.NODE_ENV === 'development') {
-      try {
-        // Use service role key to automatically confirm the user's email
-        // Note: This is a workaround for development/testing and should not be used in production
-        console.log('Auto-confirming email for development environment');
-
-        // Note: This requires a server-side function or endpoint that can use the service role key
-        // Since we can't directly use the service role key in the client, we'll work around this
-
-        // Instead, let's warn the user they need to confirm their email
-        console.log('IMPORTANT: In production, the user would need to confirm their email');
-        console.log('For testing, you can log in immediately with these credentials');
-      } catch (confirmError) {
-        console.error('Failed to auto-confirm email:', confirmError);
-      }
-    }
+    // Email confirmation is now disabled in the database, so we don't need to check
+    // Users are automatically logged in after signup
+    console.log('Email confirmation disabled, user is automatically logged in');
 
     // Create user profile in our users table
     // Using the Supabase auth user ID as the ID for our users table
@@ -136,26 +121,11 @@ export async function signIn(email: string, password: string): Promise<User | nu
     if (authError) {
       console.error('Supabase Auth signin error:', authError);
 
-      // Check if this is an email confirmation error
+      // Email confirmation is now disabled, so we ignore this error
       if (authError.message?.includes('Email not confirmed')) {
-        console.log('Email not confirmed. Attempting to resend confirmation email.');
-
-        // Resend confirmation email
-        const { error: resendError } = await supabase.auth.resend({
-          type: 'signup',
-          email,
-          options: {
-            emailRedirectTo: `${window.location.origin}/login`,
-          },
-        });
-
-        if (resendError) {
-          console.error('Error resending confirmation email:', resendError);
-        } else {
-          console.log('Confirmation email resent. Please check your inbox.');
-        }
-
-        // Return special error code so UI can show a message
+        console.log('Email confirmation is disabled, ignoring this error');
+      } else {
+        // This is a different error, so we should return null
         return null;
       }
     }

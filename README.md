@@ -121,6 +121,19 @@ This creates:
 
 After running this script, you'll need to update your application to use these new service files instead of the mock data.
 
+## Disabling Email Confirmation
+
+Email confirmation has been disabled for this application. When a user signs up, they are automatically authenticated without needing to verify their email address. This configuration is suitable for development and testing environments.
+
+To disable email confirmation in your own Supabase project:
+
+1. Go to the Supabase dashboard and select your project
+2. Navigate to Authentication → Settings → Email
+3. Uncheck "Enable email confirmations"
+4. Save changes
+
+This will allow users to sign in immediately after registration without confirming their email address.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

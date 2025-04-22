@@ -66,21 +66,12 @@ function LoginWithSearchParams() {
 
       // Handle email confirmation error specifically
       if (authError && authError.message.includes('Email not confirmed')) {
-        setError('Please confirm your email address before logging in.');
-
-        // Resend confirmation email
-        const { error: resendError } = await supabase.auth.resend({
-          type: 'signup',
-          email,
-          options: {
-            emailRedirectTo: `${window.location.origin}/login`,
-          },
-        });
-
-        if (!resendError) {
-          setMessage('A new confirmation email has been sent to your inbox.');
-        }
-
+        // Email confirmation is now disabled in database, proceed with login
+        console.log('Email confirmation is disabled, attempting login via app context');
+      } else if (authError) {
+        // Handle other auth errors
+        console.error('Authentication error:', authError);
+        setError('Invalid email or password');
         setIsLoading(false);
         return;
       }
@@ -115,6 +106,18 @@ function LoginWithSearchParams() {
 
   const toggleDebugInfo = () => {
     setShowDebugInfo(!showDebugInfo);
+  };
+
+  // Helper function to get the signup URL
+  const getSignupUrl = () => {
+    // Only run in browser
+    if (typeof window !== 'undefined') {
+      const redirectUrl = localStorage.getItem('redirectAfterLogin');
+      if (redirectUrl) {
+        return `/signup?redirect=${encodeURIComponent(redirectUrl)}`;
+      }
+    }
+    return '/signup';
   };
 
   return (
@@ -182,7 +185,7 @@ function LoginWithSearchParams() {
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-600">
             Don&apos;t have an account?{' '}
-            <Link href="/signup" className="font-medium text-blue-600 hover:text-blue-500">
+            <Link href={getSignupUrl()} className="font-medium text-blue-600 hover:text-blue-500">
               Sign up
             </Link>
           </p>

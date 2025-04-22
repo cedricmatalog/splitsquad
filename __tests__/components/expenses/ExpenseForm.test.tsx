@@ -108,6 +108,12 @@ const mockGroups = [
   { id: 'group-2', name: 'Apartment', createdBy: 'user-2' },
 ];
 
+const mockGroupMembers = [
+  { userId: 'user-1', groupId: 'group-1' },
+  { userId: 'user-2', groupId: 'group-1' },
+  { userId: 'user-1', groupId: 'group-2' },
+];
+
 const mockExpense = {
   id: 'expense-1',
   groupId: 'group-1',
@@ -164,6 +170,7 @@ describe('ExpenseForm', () => {
       setExpenses: jest.fn(),
       setExpenseParticipants: jest.fn(),
       currentUser: mockUsers[0],
+      groupMembers: mockGroupMembers,
     });
   });
 
@@ -267,6 +274,7 @@ describe('ExpenseForm', () => {
       setExpenses: mockSetExpenses,
       setExpenseParticipants: mockSetExpenseParticipants,
       currentUser: mockUsers[0],
+      groupMembers: mockGroupMembers,
     });
 
     render(<ExpenseForm groupId="group-1" />);
@@ -321,6 +329,7 @@ describe('ExpenseForm', () => {
       setExpenses: mockSetExpenses,
       setExpenseParticipants: mockSetExpenseParticipants,
       currentUser: mockUsers[0],
+      groupMembers: mockGroupMembers,
     });
 
     render(
@@ -371,6 +380,16 @@ describe('ExpenseForm', () => {
     const originalConsoleError = console.error;
     const mockConsoleError = jest.fn();
     console.error = mockConsoleError;
+
+    // Mock useAppContext implementation
+    (useAppContext as jest.Mock).mockReturnValue({
+      users: mockUsers,
+      groups: mockGroups,
+      setExpenses: jest.fn(),
+      setExpenseParticipants: jest.fn(),
+      currentUser: mockUsers[0],
+      groupMembers: mockGroupMembers,
+    });
 
     render(<ExpenseForm groupId="group-1" />);
 
