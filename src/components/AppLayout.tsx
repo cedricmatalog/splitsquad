@@ -72,14 +72,21 @@ export function AppLayout({ children }: AppLayoutProps) {
     setMobileMenuOpen(!mobileMenuOpen);
   };
 
+  const isActiveRoute = (route: string) => {
+    if (route === '/dashboard') {
+      return pathname === '/dashboard';
+    }
+    return pathname.startsWith(route);
+  };
+
   return (
-    <div className="min-h-screen flex flex-col  content-shift-free">
+    <div className="min-h-screen flex flex-col content-shift-free">
       <header className="border-b bg-white shadow-sm sticky top-0 z-10 h-16 force-gpu">
         <div className="container mx-auto px-4 h-full flex justify-between items-center">
           <div className="flex items-center gap-8">
             <Link
               href="/dashboard"
-              className="text-xl font-bold flex items-center gap-2 text-gray-900 hover:text-primary transition-colors"
+              className="text-xl font-bold flex items-center gap-2 text-gray-900 hover:text-primary transition-colors animate-subtle-scale"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -127,11 +134,11 @@ export function AppLayout({ children }: AppLayoutProps) {
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Mobile menu button */}
+            {/* Mobile menu button - show only on screens smaller than medium, but keep hidden on very small screens where we'll use bottom nav */}
             <Button
               variant="ghost"
               size="icon"
-              className="md:hidden"
+              className="sm:hidden md:hidden"
               onClick={toggleMobileMenu}
               aria-label="Toggle menu"
             >
@@ -182,9 +189,9 @@ export function AppLayout({ children }: AppLayoutProps) {
         </div>
       </header>
 
-      {/* Mobile Navigation Drawer */}
+      {/* Mobile Navigation Drawer - Show only on medium screens */}
       <div
-        className={`fixed inset-0 bg-gray-800 bg-opacity-50 z-40 md:hidden transition-opacity duration-300 ${
+        className={`fixed inset-0 bg-gray-800 bg-opacity-50 z-40 sm:block md:hidden lg:hidden xl:hidden hidden transition-opacity duration-300 ${
           mobileMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
         onClick={toggleMobileMenu}
@@ -193,7 +200,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       <div
         className={`fixed top-0 right-0 h-full w-3/4 max-w-xs bg-white z-50 shadow-xl transform transition-optimized ${
           mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
-        } md:hidden force-gpu`}
+        } sm:block md:hidden lg:hidden xl:hidden hidden force-gpu`}
       >
         <div className="flex flex-col h-full">
           <div className="p-4 border-b flex justify-between items-center">
@@ -299,7 +306,56 @@ export function AppLayout({ children }: AppLayoutProps) {
         </div>
       </div>
 
-      <main className="flex-1 pb-10">{children}</main>
+      {/* Main content - Add pb-safe to prevent bottom bar overlap */}
+      <main className="flex-1 pb-safe">{children}</main>
+
+      {/* Bottom Mobile Navigation Bar - show only on small screens */}
+      <div className="bottom-nav sm:hidden">
+        <Link
+          href="/dashboard"
+          className={`bottom-nav-item ${isActiveRoute('/dashboard') ? 'active' : ''}`}
+        >
+          <LayoutDashboard size={20} />
+          <span className="text-xs mt-1">Dashboard</span>
+        </Link>
+        <Link
+          href="/groups"
+          className={`bottom-nav-item ${isActiveRoute('/groups') ? 'active' : ''}`}
+        >
+          <Users size={20} />
+          <span className="text-xs mt-1">Groups</span>
+        </Link>
+        <Link
+          href="/expenses"
+          className={`bottom-nav-item ${isActiveRoute('/expenses') ? 'active' : ''}`}
+        >
+          <DollarSign size={20} />
+          <span className="text-xs mt-1">Expenses</span>
+        </Link>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm" className="bottom-nav-item w-full h-full">
+              <Menu size={20} />
+              <span className="text-xs mt-1">More</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuLabel>Options</DropdownMenuLabel>
+            <DropdownMenuItem asChild>
+              <Link href="/settings" className="cursor-pointer">
+                Settings
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={handleSignOut}
+              className="cursor-pointer text-red-600 hover:text-red-700 focus:text-red-700"
+            >
+              Sign out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
 
       <footer className="border-t py-6 bg-white force-gpu">
         <div className="container mx-auto px-4">

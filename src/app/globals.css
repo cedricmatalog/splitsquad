@@ -267,3 +267,146 @@ img.loading {
   position: relative;
   overflow-x: hidden;
 }
+
+/* Enhanced Animations */
+@keyframes softFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes gentleSlideUp {
+  from { transform: translateY(8px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes subtleScale {
+  from { transform: scale(0.98); opacity: 0.8; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.animate-soft-fade {
+  animation: softFadeIn 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.animate-gentle-slide {
+  animation: gentleSlideUp 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.animate-subtle-scale {
+  animation: subtleScale 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+/* Enhanced Card Styling */
+.card-hover-effect {
+  transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.card-hover-effect:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px -10px rgba(0, 0, 0, 0.1);
+}
+
+/* Modern Gradient Effects */
+.gradient-primary {
+  background: linear-gradient(135deg, var(--primary) 0%, oklch(0.55 0.22 264) 100%);
+}
+
+.gradient-surface {
+  background: linear-gradient(135deg, oklch(0.99 0.01 240) 0%, oklch(1 0 0) 100%);
+}
+
+/* Enhanced Mobile Navigation */
+.mobile-nav-item {
+  min-height: 3.5rem;
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  transition: all 0.2s ease;
+  border-radius: var(--radius);
+}
+
+.mobile-nav-item:active {
+  transform: scale(0.98);
+}
+
+.mobile-nav-indicator {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background-color: var(--primary);
+  transform: scaleY(0);
+  transform-origin: center;
+  transition: transform 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.mobile-nav-active .mobile-nav-indicator {
+  transform: scaleY(1);
+}
+
+/* Improved Skeleton Loading */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.06) 25%,
+    rgba(0, 0, 0, 0.04) 37%,
+    rgba(0, 0, 0, 0.06) 63%
+  );
+  background-size: 400% 100%;
+  animation: skeleton-loading 1.4s ease infinite;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
+
+/* Bottom Navigation Bar for Mobile */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 0.5rem;
+  background-color: var(--background);
+  border-top: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  z-index: 40;
+}
+
+.bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  border-radius: var(--radius);
+  transition: all 0.2s ease;
+}
+
+.bottom-nav-item:active {
+  background-color: var(--accent);
+}
+
+.bottom-nav-item.active {
+  color: var(--primary);
+}
+
+/* Content safe area for bottom navigation */
+.pb-safe {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 4rem);
+}
+
+/* Improved Focus Styles */
+.focus-ring {
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2;
+}
