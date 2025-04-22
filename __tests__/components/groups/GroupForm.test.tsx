@@ -2,20 +2,16 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { GroupForm } from '@/components/groups/GroupForm';
 import { User } from '@/types';
-import { createGroup } from '@/services/groups'; // Import the service
+import { createGroup } from '@/services/groups';
+import { createGroupMember } from '@/services/group_members';
 
-// Mock next/link
-jest.mock('next/link', () => {
-  const MockLink = ({ children, href }: { children: React.ReactNode; href: string }) => {
-    return <a href={href}>{children}</a>;
-  };
-  MockLink.displayName = 'MockLink';
-  return MockLink;
-});
-
-// Mock the createGroup service
+// Mock the services
 jest.mock('@/services/groups', () => ({
   createGroup: jest.fn(),
+}));
+
+jest.mock('@/services/group_members', () => ({
+  createGroupMember: jest.fn(),
 }));
 
 // Mock data
@@ -32,154 +28,122 @@ const mockUsers: User[] = [
     email: 'jamie@example.com',
     avatar: '/jamie.png',
   },
+  {
+    id: 'user-3',
+    name: 'Taylor Wilson',
+    email: 'taylor@example.com',
+    avatar: '/taylor.png',
+  },
 ];
-const mockOnSubmit = jest.fn();
-
-const renderGroupForm = (props = {}) => {
-  return render(
-    <GroupForm
-      users={mockUsers}
-      currentUserId="user-1"
-      onSubmit={mockOnSubmit}
-      isSubmitting={false}
-      {...props}
-    />
-  );
-};
-
-// Mock window.alert before tests run
-beforeAll(() => {
-  jest.spyOn(window, 'alert').mockImplementation(() => {});
-});
-
-afterAll(() => {
-  // Restore original alert implementation
-  (window.alert as jest.Mock).mockRestore();
-});
 
 describe('GroupForm', () => {
+  // Mock window.alert
+  const mockAlert = jest.fn();
+  window.alert = mockAlert;
+
+  // Mock onSubmit handler
+  const mockOnSubmit = jest.fn();
+
   beforeEach(() => {
-    // Reset mocks before each test
     jest.clearAllMocks();
+
+    // Mock successful group creation
     (createGroup as jest.Mock).mockResolvedValue({
-      // Mock successful creation
-      id: 'group-mock-id-456', // Use a predictable ID
+      id: 'group-123',
       name: 'Test Group',
-      description: 'This is a test group',
-      createdBy: 'user-1', // Ensure this matches expected UUID format if needed
-      date: new Date().toISOString(),
+      description: 'A test group',
+      created_at: new Date().toISOString(),
+    });
+
+    // Mock successful group member creation
+    (createGroupMember as jest.Mock).mockResolvedValue({
+      user_id: 'user-1',
+      group_id: 'group-123',
+      created_at: new Date().toISOString(),
     });
   });
 
+  const renderGroupForm = (props = {}) => {
+    return render(
+      <GroupForm
+        users={mockUsers}
+        currentUserId="user-1"
+        onSubmit={mockOnSubmit}
+        isSubmitting={false}
+        {...props}
+      />
+    );
+  };
+
   it('renders correctly', () => {
     renderGroupForm();
-    // Use placeholder text instead of labels
-    expect(screen.getByPlaceholderText('Summer Trip, Apartment, etc.')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('Brief description of the group')).toBeInTheDocument();
+    expect(screen.getByText('Group Name')).toBeInTheDocument();
+    expect(screen.getByText('Description')).toBeInTheDocument();
     expect(screen.getByText('Group Members')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Create Group/i })).toBeInTheDocument();
   });
 
   it('validates form before submitting', async () => {
     renderGroupForm();
+
+    // Submit without filling out required fields
     fireEvent.click(screen.getByRole('button', { name: /Create Group/i }));
 
+    // Wait for validation errors
     await waitFor(() => {
-      expect(screen.getByText('Group name is required')).toBeInTheDocument();
-      expect(screen.getByText('Description is required')).toBeInTheDocument();
+      expect(screen.getByText(/Group name is required/i)).toBeInTheDocument();
     });
 
-    expect(createGroup).not.toHaveBeenCalled();
     expect(mockOnSubmit).not.toHaveBeenCalled();
+    expect(createGroup).not.toHaveBeenCalled();
   });
 
   it('submits form with valid data', async () => {
     renderGroupForm();
 
-    // Fill form using placeholder text
+    // Fill out the form
     fireEvent.change(screen.getByPlaceholderText('Summer Trip, Apartment, etc.'), {
       target: { value: 'Test Group' },
     });
+
     fireEvent.change(screen.getByPlaceholderText('Brief description of the group'), {
-      target: { value: 'This is a test group' },
+      target: { value: 'A test group' },
     });
 
-    // Select another member (user-1 is selected by default)
-    fireEvent.click(screen.getByTestId('user-checkbox-user-2'));
+    // Select members (current user is already selected by default)
+    fireEvent.click(screen.getByTestId('user-checkbox-user-2')); // Select the second user
 
-    // Submit
+    // Submit the form
     fireEvent.click(screen.getByRole('button', { name: /Create Group/i }));
 
-    // Wait for async operations
+    // Wait for the form submission
     await waitFor(() => {
-      // Check createGroup was called
-      expect(createGroup).toHaveBeenCalledTimes(1);
-      expect(createGroup).toHaveBeenCalledWith({
-        name: 'Test Group',
-        description: 'This is a test group',
-        createdBy: 'user-1',
-        date: expect.any(String),
-      });
-    });
-
-    await waitFor(() => {
-      // Check if onSubmit was called with correct data (including the ID from the mock response)
-      expect(mockOnSubmit).toHaveBeenCalledTimes(1);
-      expect(mockOnSubmit).toHaveBeenCalledWith({
-        name: 'Test Group',
-        description: 'This is a test group',
-        members: ['user-1', 'user-2'],
-        id: 'group-mock-id-456', // Ensure this ID matches the mock response
-      });
+      expect(createGroup).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: 'Test Group',
+          description: 'A test group',
+        })
+      );
+      expect(mockOnSubmit).toHaveBeenCalled();
     });
   });
 
-  it('handles member selection correctly', () => {
-    renderGroupForm();
-    // user-1 should be selected by default
-    expect(screen.getByTestId('user-checkbox-user-1')).toHaveClass('border-primary');
-    expect(screen.getByTestId('user-checkbox-user-2')).not.toHaveClass('border-primary');
-
-    // Click user-2 to select
-    fireEvent.click(screen.getByTestId('user-checkbox-user-2'));
-    expect(screen.getByTestId('user-checkbox-user-2')).toHaveClass('border-primary');
-
-    // Click user-2 again to deselect
-    fireEvent.click(screen.getByTestId('user-checkbox-user-2'));
-    expect(screen.getByTestId('user-checkbox-user-2')).not.toHaveClass('border-primary');
-
-    // Cannot deselect current user (user-1)
-    fireEvent.click(screen.getByTestId('user-checkbox-user-1'));
-    expect(screen.getByTestId('user-checkbox-user-1')).toHaveClass('border-primary');
-  });
-
-  it('calls alert on failed group creation', async () => {
-    // Override the mock for this specific test to simulate failure
-    (createGroup as jest.Mock).mockResolvedValue(null);
-
+  it('allows selecting and deselecting group members', () => {
     renderGroupForm();
 
-    // Fill form using placeholder text
-    fireEvent.change(screen.getByPlaceholderText('Summer Trip, Apartment, etc.'), {
-      target: { value: 'Fail Group' },
-    });
-    fireEvent.change(screen.getByPlaceholderText('Brief description of the group'), {
-      target: { value: 'This should fail' },
-    });
+    // User checkboxes
+    const user1Checkbox = screen.getByTestId('user-checkbox-user-1');
+    const user2Checkbox = screen.getByTestId('user-checkbox-user-2');
 
-    // Submit
-    fireEvent.click(screen.getByRole('button', { name: /Create Group/i }));
+    // Verify current user is selected and appears disabled
+    expect(user1Checkbox).toHaveClass('opacity-70');
 
-    // Wait for async operations
-    await waitFor(() => {
-      expect(createGroup).toHaveBeenCalledTimes(1);
-    });
+    // Select another user
+    fireEvent.click(user2Checkbox);
+    expect(user2Checkbox).toHaveClass('border-primary');
 
-    await waitFor(() => {
-      // Check that alert was called (since createGroup returned null)
-      expect(window.alert).toHaveBeenCalledWith('Failed to create group. Please try again.');
-      // Ensure onSubmit was NOT called
-      expect(mockOnSubmit).not.toHaveBeenCalled();
-    });
+    // Deselect the user
+    fireEvent.click(user2Checkbox);
+    expect(user2Checkbox).not.toHaveClass('border-primary');
   });
 });

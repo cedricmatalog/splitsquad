@@ -1,6 +1,14 @@
 'use client';
 
-import { createContext, useContext, ReactNode, useEffect, useState, useCallback } from 'react';
+import {
+  createContext,
+  useContext,
+  ReactNode,
+  useEffect,
+  useState,
+  useCallback,
+  useMemo,
+} from 'react';
 import { User, Group, Expense, GroupMember, ExpenseParticipant, Payment } from '@/types';
 import { signIn, signOut, getCurrentUser } from '@/services/auth';
 import { getUsers } from '@/services/users';
@@ -32,7 +40,7 @@ interface AppContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<User | null>;
-  logout: () => void;
+  logout: () => Promise<void>;
   refreshData: () => Promise<void>;
 }
 
@@ -55,6 +63,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       // Only fetch data if user is authenticated
       if (currentUser) {
+        setIsLoading(true);
         const [
           usersData,
           groupsData,
@@ -80,6 +89,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       console.error('Error refreshing data:', error);
+    } finally {
+      setIsLoading(false);
     }
   }, [currentUser]);
 
@@ -109,7 +120,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [currentUser, refreshData]);
 
   // Login function using Supabase
-  const login = async (email: string, password: string): Promise<User | null> => {
+  const login = useCallback(async (email: string, password: string): Promise<User | null> => {
     try {
       const user = await signIn(email, password);
       if (user) {
@@ -120,10 +131,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       console.error('Login error:', error);
       return null;
     }
-  };
+  }, []);
 
   // Logout function using Supabase
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
       await signOut();
       setCurrentUser(null);
@@ -137,35 +148,47 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error('Logout error:', error);
     }
-  };
+  }, []);
 
-  return (
-    <AppContext.Provider
-      value={{
-        users,
-        groups,
-        expenses,
-        groupMembers,
-        expenseParticipants,
-        payments,
-        setUsers,
-        setGroups,
-        setExpenses,
-        setGroupMembers,
-        setExpenseParticipants,
-        setPayments,
-        currentUser,
-        setCurrentUser,
-        isAuthenticated: !!currentUser,
-        isLoading,
-        login,
-        logout,
-        refreshData,
-      }}
-    >
-      {children}
-    </AppContext.Provider>
+  // Memoize the context value to prevent unnecessary re-renders
+  const contextValue = useMemo(
+    () => ({
+      users,
+      groups,
+      expenses,
+      groupMembers,
+      expenseParticipants,
+      payments,
+      setUsers,
+      setGroups,
+      setExpenses,
+      setGroupMembers,
+      setExpenseParticipants,
+      setPayments,
+      currentUser,
+      setCurrentUser,
+      isAuthenticated: !!currentUser,
+      isLoading,
+      login,
+      logout,
+      refreshData,
+    }),
+    [
+      users,
+      groups,
+      expenses,
+      groupMembers,
+      expenseParticipants,
+      payments,
+      currentUser,
+      isLoading,
+      login,
+      logout,
+      refreshData,
+    ]
   );
+
+  return <AppContext.Provider value={contextValue}>{children}</AppContext.Provider>;
 }
 
 export function useAppContext() {
@@ -174,4 +197,27 @@ export function useAppContext() {
     throw new Error('useAppContext must be used within an AppProvider');
   }
   return context;
+}
+
+// Create specialized hooks for specific slices of the context
+// to prevent unnecessary re-renders when only one piece changes
+
+export function useUserData() {
+  const { currentUser, users, isAuthenticated, isLoading, login, logout } = useAppContext();
+  return { currentUser, users, isAuthenticated, isLoading, login, logout };
+}
+
+export function useGroupData() {
+  const { groups, groupMembers, setGroups, setGroupMembers } = useAppContext();
+  return { groups, groupMembers, setGroups, setGroupMembers };
+}
+
+export function useExpenseData() {
+  const { expenses, expenseParticipants, setExpenses, setExpenseParticipants } = useAppContext();
+  return { expenses, expenseParticipants, setExpenses, setExpenseParticipants };
+}
+
+export function usePaymentData() {
+  const { payments, setPayments } = useAppContext();
+  return { payments, setPayments };
 }

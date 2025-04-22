@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppContext } from '@/context/AppContext';
 import useExpenseCalculations from '@/hooks/useExpenseCalculations';
@@ -44,6 +44,12 @@ export function ExpenseForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
+  // Memoized group members to prevent recalculation
+  const groupMembers = useMemo(() => {
+    if (!selectedGroupId) return [];
+    return getGroupMembers(selectedGroupId);
+  }, [selectedGroupId, getGroupMembers]);
+
   // Calculate equal shares based on amount and members
   const calculateEqualShares = useCallback((memberIds: string[], amountValue: number) => {
     if (memberIds.length === 0 || isNaN(amountValue)) {
@@ -73,7 +79,7 @@ export function ExpenseForm({
     // Only run this effect once on mount
     if (isEditing && expenseParticipants) {
       // If editing, use existing participants and their shares
-      const members = getGroupMembers(selectedGroupId);
+      const members = groupMembers;
       const memberIds = members.map(member => member.id);
 
       const existingShares = memberIds.map(memberId => {
@@ -95,9 +101,8 @@ export function ExpenseForm({
       handleAmountChange(amount);
     } else {
       // Just initialize empty shares for all members
-      const members = getGroupMembers(selectedGroupId);
       setShares(
-        members.map(member => ({
+        groupMembers.map(member => ({
           userId: member.id,
           share: 0,
         }))
@@ -113,76 +118,80 @@ export function ExpenseForm({
     const amountValue = parseFloat(amount);
     if (isNaN(amountValue)) return;
 
-    const members = getGroupMembers(selectedGroupId);
-    const memberIds = members.map(member => member.id);
-
+    const memberIds = groupMembers.map(member => member.id);
     const equalShares = calculateEqualShares(memberIds, amountValue);
     setShares(equalShares);
-  }, [amount, splitType, shares.length, selectedGroupId, calculateEqualShares, getGroupMembers]);
+  }, [amount, splitType, selectedGroupId, calculateEqualShares, groupMembers]);
 
   // Handle selecting a group
-  const handleGroupChange = (groupId: string) => {
-    setSelectedGroupId(groupId);
+  const handleGroupChange = useCallback(
+    (groupId: string) => {
+      setSelectedGroupId(groupId);
 
-    if (!groupId) {
-      setShares([]);
-      return;
-    }
-
-    // Update shares based on new group members
-    const members = getGroupMembers(groupId);
-
-    if (splitType === 'equal' && amount) {
-      const amountValue = parseFloat(amount);
-      if (!isNaN(amountValue)) {
-        const memberIds = members.map(member => member.id);
-        const equalShares = calculateEqualShares(memberIds, amountValue);
-        setShares(equalShares);
+      if (!groupId) {
+        setShares([]);
+        return;
       }
-    } else {
-      // Initialize with zero shares
-      setShares(
-        members.map(member => ({
-          userId: member.id,
-          share: 0,
-        }))
-      );
-    }
-  };
+
+      // Update shares based on new group members
+      const members = getGroupMembers(groupId);
+
+      if (splitType === 'equal' && amount) {
+        const amountValue = parseFloat(amount);
+        if (!isNaN(amountValue)) {
+          const memberIds = members.map(member => member.id);
+          const equalShares = calculateEqualShares(memberIds, amountValue);
+          setShares(equalShares);
+        }
+      } else {
+        // Initialize with zero shares
+        setShares(
+          members.map(member => ({
+            userId: member.id,
+            share: 0,
+          }))
+        );
+      }
+    },
+    [getGroupMembers, calculateEqualShares, splitType, amount]
+  );
 
   // Handle amount changes
-  const handleAmountChange = (value: string) => {
-    setAmount(value);
+  const handleAmountChange = useCallback(
+    (value: string) => {
+      setAmount(value);
 
-    if (splitType !== 'equal' || !selectedGroupId || !value) return;
+      if (splitType !== 'equal' || !selectedGroupId || !value) return;
 
-    const amountValue = parseFloat(value);
-    if (isNaN(amountValue)) return;
+      const amountValue = parseFloat(value);
+      if (isNaN(amountValue)) return;
 
-    const members = getGroupMembers(selectedGroupId);
-    const memberIds = members.map(member => member.id);
-
-    const equalShares = calculateEqualShares(memberIds, amountValue);
-    setShares(equalShares);
-  };
+      const memberIds = groupMembers.map(member => member.id);
+      const equalShares = calculateEqualShares(memberIds, amountValue);
+      setShares(equalShares);
+    },
+    [splitType, selectedGroupId, groupMembers, calculateEqualShares]
+  );
 
   // Handle split type changes
-  const handleSplitTypeChange = (newSplitType: string) => {
-    setSplitType(newSplitType);
+  const handleSplitTypeChange = useCallback(
+    (newSplitType: string) => {
+      setSplitType(newSplitType);
 
-    if (newSplitType === 'equal' && amount && selectedGroupId) {
-      const amountValue = parseFloat(amount);
-      if (!isNaN(amountValue)) {
-        const members = getGroupMembers(selectedGroupId);
-        const memberIds = members.map(member => member.id);
-        const equalShares = calculateEqualShares(memberIds, amountValue);
-        setShares(equalShares);
+      if (newSplitType === 'equal' && amount && selectedGroupId) {
+        const amountValue = parseFloat(amount);
+        if (!isNaN(amountValue)) {
+          const memberIds = groupMembers.map(member => member.id);
+          const equalShares = calculateEqualShares(memberIds, amountValue);
+          setShares(equalShares);
+        }
       }
-    }
-  };
+    },
+    [amount, selectedGroupId, groupMembers, calculateEqualShares]
+  );
 
   // Handle individual share changes
-  const handleShareChange = (userId: string, value: string) => {
+  const handleShareChange = useCallback((userId: string, value: string) => {
     const shareValue = value === '' ? 0 : parseFloat(value);
 
     setShares(prev =>
@@ -191,9 +200,9 @@ export function ExpenseForm({
 
     // If we're changing a share manually, switch to custom split
     setSplitType('custom');
-  };
+  }, []);
 
-  const validateForm = () => {
+  const validateForm = useCallback(() => {
     const newErrors: { [key: string]: string } = {};
 
     if (!description.trim()) {
@@ -228,7 +237,7 @@ export function ExpenseForm({
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
+  }, [description, amount, selectedGroupId, paidBy, date, shares]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -272,14 +281,6 @@ export function ExpenseForm({
       if (isEditing && expense?.id) {
         // For edits, fetch current participants, delete them, then create new ones
         const currentParticipants = await getExpenseParticipants({ expenseId: expense.id });
-        // Use Promise.all for batch deletion (supabase client might handle this better)
-        // Assuming deleteExpenseParticipant takes expenseId and userId or a unique participant ID
-        // For simplicity, let's assume we need to fetch by expenseId and delete individually
-        // This is inefficient; a batch delete/update or transaction would be better
-
-        // Simplified: Delete all participants for this expense and recreate
-        // Find a better way if performance is critical
-        // await Promise.all(currentParticipants.map(p => deleteExpenseParticipant(p.id))); // Assumes participant has an `id`
 
         // Use the new delete function
         await Promise.all(
@@ -304,14 +305,12 @@ export function ExpenseForm({
       }
 
       // Update local state AFTER successful Supabase operations
-      // Ideally, you'd refresh data from context after mutations
-      // For now, just mimic the previous behavior but with persisted data
       if (isEditing) {
         setExpenses(prev => prev.map(e => (e.id === persistedExpense!.id ? persistedExpense! : e)));
-        // TODO: Refresh participants from context instead of manual update
+        // Update participants from context
         setExpenseParticipants(prev => [
           ...prev.filter(p => p.expenseId !== persistedExpense!.id),
-          ...(newParticipantsData as ExpenseParticipant[]), // Type assertion might be needed
+          ...(newParticipantsData as ExpenseParticipant[]),
         ]);
       } else {
         setExpenses(prev => [...prev, persistedExpense!]);
@@ -327,15 +326,21 @@ export function ExpenseForm({
     }
   };
 
-  const getUserName = (userId: string) => {
-    const user = users.find(user => user.id === userId);
-    return user ? user.name : 'Unknown';
-  };
+  const getUserName = useCallback(
+    (userId: string) => {
+      const user = users.find(user => user.id === userId);
+      return user ? user.name : 'Unknown';
+    },
+    [users]
+  );
 
-  const getUserAvatar = (userId: string) => {
-    const user = users.find(user => user.id === userId);
-    return user ? user.avatar : '';
-  };
+  const getUserAvatar = useCallback(
+    (userId: string) => {
+      const user = users.find(user => user.id === userId);
+      return user ? user.avatar : '';
+    },
+    [users]
+  );
 
   return (
     <Card>
