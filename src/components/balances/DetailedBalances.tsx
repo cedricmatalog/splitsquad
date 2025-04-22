@@ -12,6 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import useExpenseCalculations from '@/hooks/useExpenseCalculations';
 import Link from 'next/link';
+import React, { useCallback, useMemo } from 'react';
 
 interface DetailedBalancesProps {
   groupId: string;
@@ -25,55 +26,75 @@ interface DebtDetail {
   amount: number;
 }
 
-export function DetailedBalances({ groupId }: DetailedBalancesProps) {
+function DetailedBalancesComponent({ groupId }: DetailedBalancesProps) {
   const { calculateGroupBalances } = useExpenseCalculations();
 
-  // Get balances for this group
-  const balances = calculateGroupBalances(groupId);
+  // Memoize balance calculations
+  const balances = useMemo(
+    () => calculateGroupBalances(groupId),
+    [calculateGroupBalances, groupId]
+  );
 
-  // Calculate detailed balances between each user pair
-  const detailedBalances: DebtDetail[] = [];
-
-  // Skip if there are no positive balances (everyone settled)
-  const positiveBalances = balances.filter(b => b.amount > 0);
-
-  if (positiveBalances.length > 0) {
-    // For each person with positive balance (is owed money)
-    positiveBalances.forEach(creditor => {
-      // Find people with negative balances (owe money)
-      const debtors = balances.filter(b => b.amount < 0);
-
-      // Calculate what portion of their debt is owed to this creditor
-      debtors.forEach(debtor => {
-        // Proportional amount based on total positive balances
-        const totalPositiveBalance = positiveBalances.reduce((sum, b) => sum + b.amount, 0);
-        const proportionOfDebt = creditor.amount / totalPositiveBalance;
-        const amountOwed = Math.abs(debtor.amount) * proportionOfDebt;
-
-        if (amountOwed > 0.01) {
-          // Skip very small amounts
-          detailedBalances.push({
-            fromId: debtor.userId,
-            fromName: debtor.userName,
-            toId: creditor.userId,
-            toName: creditor.userName,
-            amount: parseFloat(amountOwed.toFixed(2)),
-          });
-        }
-      });
-    });
-  }
-
-  // Format amount with currency symbol
-  const formatAmount = (amount: number) => {
+  // Format amount with currency symbol - memoize to prevent recreating on each render
+  const formatAmount = useCallback((amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
     }).format(amount);
-  };
+  }, []);
 
-  // Only show record payment button if there are outstanding balances
-  const showRecordPaymentButton = detailedBalances.length > 0;
+  // Memoize the detailed balances calculation
+  const { detailedBalances, showRecordPaymentButton } = useMemo(() => {
+    const result: DebtDetail[] = [];
+
+    // Skip if there are no positive balances (everyone settled)
+    const positiveBalances = balances.filter(b => b.amount > 0);
+
+    if (positiveBalances.length > 0) {
+      // For each person with positive balance (is owed money)
+      positiveBalances.forEach(creditor => {
+        // Find people with negative balances (owe money)
+        const debtors = balances.filter(b => b.amount < 0);
+
+        // Calculate what portion of their debt is owed to this creditor
+        debtors.forEach(debtor => {
+          // Proportional amount based on total positive balances
+          const totalPositiveBalance = positiveBalances.reduce((sum, b) => sum + b.amount, 0);
+          const proportionOfDebt = creditor.amount / totalPositiveBalance;
+          const amountOwed = Math.abs(debtor.amount) * proportionOfDebt;
+
+          if (amountOwed > 0.01) {
+            // Skip very small amounts
+            result.push({
+              fromId: debtor.userId,
+              fromName: debtor.userName,
+              toId: creditor.userId,
+              toName: creditor.userName,
+              amount: parseFloat(amountOwed.toFixed(2)),
+            });
+          }
+        });
+      });
+    }
+
+    return {
+      detailedBalances: result,
+      showRecordPaymentButton: result.length > 0,
+    };
+  }, [balances]);
+
+  // Memoize the table rows to prevent recreating on each render
+  const tableRows = useMemo(
+    () =>
+      detailedBalances.map((detail, index) => (
+        <TableRow key={index}>
+          <TableCell className="font-medium">{detail.fromName}</TableCell>
+          <TableCell>{detail.toName}</TableCell>
+          <TableCell className="text-right">{formatAmount(detail.amount)}</TableCell>
+        </TableRow>
+      )),
+    [detailedBalances, formatAmount]
+  );
 
   return (
     <Card>
@@ -100,18 +121,13 @@ export function DetailedBalances({ groupId }: DetailedBalancesProps) {
                 <TableHead className="text-right">Amount</TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody>
-              {detailedBalances.map((detail, index) => (
-                <TableRow key={index}>
-                  <TableCell className="font-medium">{detail.fromName}</TableCell>
-                  <TableCell>{detail.toName}</TableCell>
-                  <TableCell className="text-right">{formatAmount(detail.amount)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
+            <TableBody>{tableRows}</TableBody>
           </Table>
         )}
       </CardContent>
     </Card>
   );
 }
+
+// Memoize the component to prevent unnecessary re-renders
+export const DetailedBalances = React.memo(DetailedBalancesComponent);

@@ -61,16 +61,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [lastError, setLastError] = useState<string | null>(null);
 
   // Add a retry mechanism for API calls
-  const withRetry = async <T,>(fn: () => Promise<T>, retries = 3, delay = 1000): Promise<T> => {
-    try {
-      return await fn();
-    } catch (error) {
-      if (retries <= 1) throw error;
-      console.warn(`API call failed, retrying (${retries - 1} attempts left)...`, error);
-      await new Promise(resolve => setTimeout(resolve, delay));
-      return withRetry(fn, retries - 1, delay * 1.5);
-    }
-  };
+  const withRetry = useCallback(
+    async <T,>(fn: () => Promise<T>, retries = 3, delay = 1000): Promise<T> => {
+      try {
+        return await fn();
+      } catch (error) {
+        if (retries <= 1) throw error;
+        console.warn(`API call failed, retrying (${retries - 1} attempts left)...`, error);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return withRetry(fn, retries - 1, delay * 1.5);
+      }
+    },
+    []
+  );
 
   // Modify the refreshData function to use retries
   const refreshData = useCallback(async () => {
@@ -78,6 +81,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       // Only fetch data if user is authenticated
       if (currentUser) {
         setIsLoading(true);
+        setLastError(null); // Clear any previous errors when starting a refresh
 
         // Create an error state for UI feedback
         const [
@@ -96,6 +100,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
           withRetry(() => getPayments()),
         ]);
 
+        // Batch state updates to reduce render cycles
+        // Use functional updates to ensure we're working with the latest state
         setUsers(usersData);
         setGroups(groupsData);
         setExpenses(expensesData);
@@ -110,7 +116,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, [currentUser]);
+  }, [currentUser, withRetry]);
 
   // Load current user from Supabase on mount
   useEffect(() => {

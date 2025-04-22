@@ -1,10 +1,11 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import useExpenseCalculations from '@/hooks/useExpenseCalculations';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowUpRight, ArrowDownRight, DollarSign } from 'lucide-react';
+import React from 'react';
 
 /**
  * Displays a card showing the current user's net balance.
@@ -14,7 +15,7 @@ import { ArrowUpRight, ArrowDownRight, DollarSign } from 'lucide-react';
  * Shows the net balance with appropriate styling (green for positive, red for negative, blue for zero).
  * Provides a link to the payments page if the balance is non-zero.
  */
-export function UserBalanceCard() {
+function UserBalanceCardComponent() {
   const { currentUser } = useAppContext();
   const { calculateUserTotalBalance } = useExpenseCalculations();
 
@@ -28,11 +29,24 @@ export function UserBalanceCard() {
     }).format(Math.abs(amount));
   }, []);
 
-  // Calculate user's balance if logged in
-  const balance = currentUser ? calculateUserTotalBalance() : 0;
-  const isPositive = balance > 0;
-  const isNegative = balance < 0;
-  const isZero = balance === 0;
+  // Memoize the balance calculation to prevent unnecessary recalculations
+  const balance = useMemo(
+    () => (currentUser ? calculateUserTotalBalance() : 0),
+    [currentUser, calculateUserTotalBalance]
+  );
+
+  // Memoize these derived values
+  const balanceState = useMemo(() => {
+    const isPositive = balance > 0;
+    const isNegative = balance < 0;
+    const isZero = balance === 0;
+    return { isPositive, isNegative, isZero };
+  }, [balance]);
+
+  const { isPositive, isNegative, isZero } = balanceState;
+
+  // Memoize the formatted balance
+  const formattedBalance = useMemo(() => formatCurrency(balance), [formatCurrency, balance]);
 
   return (
     <Card
@@ -65,7 +79,7 @@ export function UserBalanceCard() {
               isPositive ? 'text-green-600' : isNegative ? 'text-red-600' : 'text-gray-700'
             }`}
           >
-            {formatCurrency(balance)}
+            {formattedBalance}
           </div>
         </div>
         <p className="text-sm text-gray-500 mb-1">
@@ -89,3 +103,6 @@ export function UserBalanceCard() {
     </Card>
   );
 }
+
+// Export memoized component to prevent unnecessary re-renders
+export const UserBalanceCard = React.memo(UserBalanceCardComponent);
