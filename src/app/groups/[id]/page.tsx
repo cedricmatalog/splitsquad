@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, use } from 'react';
+import { useState, useRef, use, useEffect } from 'react';
 import Link from 'next/link';
 import { useAppContext } from '@/context/AppContext';
 import useExpenseCalculations from '@/hooks/useExpenseCalculations';
@@ -24,6 +24,7 @@ import { SettlementSuggestions } from '@/components/balances/SettlementSuggestio
 import { PaymentHistory } from '@/components/payments/PaymentHistory';
 import { createGroupMember, deleteGroupMemberByKeys } from '@/services/group_members';
 import { cn } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
 
 // Spinner component
 function Spinner({ className }: { className?: string }) {
@@ -61,6 +62,7 @@ export default function GroupDetails({ params }: { params: Promise<{ id: string 
     currentUser,
   } = useAppContext();
   const { getGroupExpenses, getGroupMembers } = useExpenseCalculations();
+  const router = useRouter();
 
   const [activeTab, setActiveTab] = useState('expenses');
   const [membersDialogOpen, setMembersDialogOpen] = useState(false);
@@ -68,9 +70,31 @@ export default function GroupDetails({ params }: { params: Promise<{ id: string 
   const [copySuccess, setCopySuccess] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const shareUrlRef = useRef<HTMLInputElement>(null);
 
   const group = groups.find(g => g.id === groupId);
+
+  // Redirect to login if user is not authenticated
+  useEffect(() => {
+    if (!currentUser) {
+      // Save current URL for redirection after login
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('redirectAfterLogin', window.location.pathname);
+      }
+      router.push('/login');
+    } else {
+      setIsLoading(false);
+    }
+  }, [currentUser, router]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Spinner className="h-8 w-8" />
+      </div>
+    );
+  }
 
   if (!group) {
     return (
@@ -154,16 +178,22 @@ export default function GroupDetails({ params }: { params: Promise<{ id: string 
     }
   };
 
-  const handleCopyShareLink = () => {
-    if (shareUrlRef.current) {
-      shareUrlRef.current.select();
-      document.execCommand('copy');
-      setCopySuccess(true);
+  const handleCopyShareLink = async () => {
+    try {
+      if (shareUrlRef.current) {
+        // Use direct group link
+        shareUrlRef.current.value = `${window.location.origin}/groups/${groupId}`;
+        shareUrlRef.current.select();
+        document.execCommand('copy');
+        setCopySuccess(true);
 
-      // Reset the success message after 2 seconds
-      setTimeout(() => {
-        setCopySuccess(false);
-      }, 2000);
+        // Reset the success message after 2 seconds
+        setTimeout(() => {
+          setCopySuccess(false);
+        }, 2000);
+      }
+    } catch (err) {
+      console.error('Error copying link:', err);
     }
   };
 
@@ -435,17 +465,17 @@ export default function GroupDetails({ params }: { params: Promise<{ id: string 
           <DialogHeader>
             <DialogTitle>Share Group</DialogTitle>
             <DialogDescription>
-              Share this group with friends to split expenses together
+              Share this link with friends to give them access to the group
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div className="flex flex-col space-y-2">
-              <label className="text-sm font-medium">Share Link</label>
+              <label className="text-sm font-medium">Direct Link</label>
               <div className="flex space-x-2">
                 <Input
                   ref={shareUrlRef}
-                  value={`https://splitsquad.example.com/invite/${groupId}`}
+                  value={`${window.location.origin}/groups/${groupId}`}
                   readOnly
                   aria-label="Share URL"
                 />
@@ -478,7 +508,7 @@ export default function GroupDetails({ params }: { params: Promise<{ id: string 
                 </Button>
               </div>
               <p className="text-sm text-gray-500">
-                Share this link with friends to invite them to your group
+                Anyone with this link can view and join the group
               </p>
             </div>
 

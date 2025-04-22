@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, use } from 'react';
+import { useState, use, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAppContext } from '@/context/AppContext';
@@ -21,12 +21,56 @@ import { format } from 'date-fns';
 export default function ExpenseDetails({ params }: { params: Promise<{ id: string }> }) {
   const { id: expenseId } = use(params);
   const router = useRouter();
-  const { expenses, users, groups, setExpenses, setExpenseParticipants } = useAppContext();
+  const {
+    expenses,
+    users,
+    groups,
+    setExpenses,
+    setExpenseParticipants,
+    currentUser,
+    groupMembers,
+  } = useAppContext();
   const { getExpenseParticipants } = useExpenseCalculations();
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const expense = expenses.find(e => e.id === expenseId);
+
+  // Redirect to login if user is not authenticated
+  useEffect(() => {
+    if (!currentUser) {
+      // Save current URL for redirection after login
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('redirectAfterLogin', window.location.pathname);
+      }
+      router.push('/login');
+      return;
+    }
+
+    // If expense exists, check if user is a member of the group
+    if (expense) {
+      const isUserMember = groupMembers.some(
+        member => member.userId === currentUser.id && member.groupId === expense.groupId
+      );
+
+      if (!isUserMember) {
+        // User is not a member of this expense's group, redirect to expenses page
+        router.push('/expenses');
+        return;
+      }
+    }
+
+    setIsLoading(false);
+  }, [currentUser, router, expense, groupMembers]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
 
   if (!expense) {
     return (

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { signUp } from '@/services/auth';
@@ -68,13 +68,24 @@ export default function SignUp() {
       // Look at Supabase auth response to see if email confirmation is needed
       // Since we redirect to login after email confirmation, we assume email confirmation is required
       setSuccess(
-        'Registration successful! Please check your email to confirm your account before logging in.'
+        'Account created successfully! Check your email to confirm your account, then log in with your new credentials.'
       );
 
       // Don't redirect yet, let the user see the confirmation message
       setTimeout(() => {
-        router.push('/login');
-      }, 5000);
+        // Get the redirect URL from localStorage if it exists
+        let redirectUrl = '';
+        if (typeof window !== 'undefined') {
+          redirectUrl = localStorage.getItem('redirectAfterLogin') || '';
+        }
+
+        // Pass the redirect URL to the login page as a query parameter
+        if (redirectUrl) {
+          router.push(`/login?redirect=${encodeURIComponent(redirectUrl)}`);
+        } else {
+          router.push('/login');
+        }
+      }, 3000);
     } catch (err: unknown) {
       console.error('Error during signup:', err);
       if (
@@ -96,6 +107,15 @@ export default function SignUp() {
       setLoading(false);
     }
   };
+
+  // Check if there's a redirect pending when the component loads
+  useEffect(() => {
+    // If we landed on signup page with a redirect pending, keep it for after signup
+    if (typeof window !== 'undefined') {
+      // We don't need to do anything special - just ensure redirectAfterLogin persists
+      // Login page will handle the redirect after successful authentication
+    }
+  }, []);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-100">

@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAppContext } from '@/context/AppContext';
 import useExpenseCalculations from '@/hooks/useExpenseCalculations';
 import {
@@ -19,20 +20,56 @@ import { PageHeader } from '@/components/PageHeader';
 import { PlusCircle, Users, Calendar } from 'lucide-react';
 
 export default function Groups() {
-  const { groups } = useAppContext();
+  const { groups, groupMembers, currentUser } = useAppContext();
   const { getGroupMembers } = useExpenseCalculations();
   const [searchTerm, setSearchTerm] = useState('');
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
 
-  const filteredGroups = groups.filter(
+  // Redirect to login if user is not authenticated
+  useEffect(() => {
+    if (!currentUser) {
+      // Save current URL for redirection after login
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('redirectAfterLogin', window.location.pathname);
+      }
+      router.push('/login');
+    } else {
+      setIsLoading(false);
+    }
+  }, [currentUser, router]);
+
+  // Filter groups to only show those the user is a member of or created
+  const userGroups = groups.filter(
+    group =>
+      // User created the group
+      (currentUser && group.createdBy === currentUser.id) ||
+      // User is a member of the group
+      (currentUser &&
+        groupMembers.some(
+          member => member.userId === currentUser.id && member.groupId === group.id
+        ))
+  );
+
+  // Then apply the search filter
+  const filteredGroups = userGroups.filter(
     group =>
       group.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       group.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto py-4 sm:py-8 px-4 sm:px-6 max-w-6xl">
       <PageHeader
-        title="Groups"
+        title="My Groups"
         description="Manage your expense groups"
         action={
           <Button asChild className="whitespace-nowrap">
@@ -141,7 +178,11 @@ export default function Groups() {
               <Users size={24} className="text-primary" />
             </div>
             <h3 className="font-semibold mb-2 text-gray-800">No Groups Found</h3>
-            <p className="text-sm text-gray-500 mb-4">Create a new group to get started.</p>
+            <p className="text-sm text-gray-500 mb-4">
+              {searchTerm
+                ? 'No groups match your search. Try different keywords.'
+                : "You aren't a member of any groups yet. Create a new group to get started."}
+            </p>
             <Button asChild className="gap-2">
               <Link href="/groups/new">
                 <PlusCircle size={16} />

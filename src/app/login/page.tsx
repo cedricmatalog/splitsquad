@@ -14,12 +14,13 @@ function LoginWithSearchParams() {
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showDebugInfo, setShowDebugInfo] = useState(false);
+  const [redirectInfo, setRedirectInfo] = useState<string | null>(null);
 
   const router = useRouter();
   const { login } = useAppContext();
   const searchParams = useSearchParams();
 
-  // Check for email confirmation success
+  // Check for email confirmation success or redirect parameter
   useEffect(() => {
     const checkEmailConfirmation = async () => {
       // Check if this is a redirect from email confirmation
@@ -29,6 +30,21 @@ function LoginWithSearchParams() {
 
       if ((accessToken || refreshToken) && type === 'signup') {
         setMessage('Email confirmed successfully! You can now log in.');
+      }
+
+      // Check if we have a redirect parameter from signup page
+      const redirectParam = searchParams.get('redirect');
+      if (redirectParam) {
+        // Store it in localStorage to use after login
+        localStorage.setItem('redirectAfterLogin', redirectParam);
+        // Display redirect info to the user
+        setRedirectInfo(`After login, you'll be redirected to continue joining the group.`);
+      } else if (typeof window !== 'undefined') {
+        // Check if there's a redirect URL in localStorage
+        const storedRedirect = localStorage.getItem('redirectAfterLogin');
+        if (storedRedirect && storedRedirect.includes('/groups/')) {
+          setRedirectInfo(`After login, you'll be redirected to continue joining the group.`);
+        }
       }
     };
 
@@ -73,6 +89,18 @@ function LoginWithSearchParams() {
       const user = await login(email, password);
 
       if (user) {
+        // Check if there's a redirect URL in localStorage
+        if (typeof window !== 'undefined') {
+          const redirectUrl = localStorage.getItem('redirectAfterLogin');
+          if (redirectUrl) {
+            // Clear the redirect URL from localStorage
+            localStorage.removeItem('redirectAfterLogin');
+            // Redirect to the saved URL
+            router.push(redirectUrl);
+            return;
+          }
+        }
+        // Default redirect to dashboard
         router.push('/dashboard');
       } else {
         setError('Invalid email or password');
@@ -99,6 +127,10 @@ function LoginWithSearchParams() {
 
         {message && (
           <div className="p-3 bg-green-50 text-green-700 rounded-md text-sm">{message}</div>
+        )}
+
+        {redirectInfo && (
+          <div className="p-3 bg-blue-50 text-blue-700 rounded-md text-sm">{redirectInfo}</div>
         )}
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>

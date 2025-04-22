@@ -23,7 +23,8 @@ import { PlusCircle, Users, Clock, ArrowRight } from 'lucide-react';
  * Handles loading states and redirects unauthenticated users to the login page.
  */
 export default function Dashboard() {
-  const { groups, expenses, isAuthenticated, isLoading } = useAppContext();
+  const { groups, expenses, isAuthenticated, isLoading, currentUser, groupMembers } =
+    useAppContext();
   const router = useRouter();
 
   useEffect(() => {
@@ -31,6 +32,29 @@ export default function Dashboard() {
       router.push('/login');
     }
   }, [isAuthenticated, isLoading, router]);
+
+  // Filter groups to only show those the user is a member of or created
+  const userGroups = currentUser
+    ? groups.filter(
+        group =>
+          // User created the group
+          group.createdBy === currentUser.id ||
+          // User is a member of the group
+          groupMembers.some(
+            member => member.userId === currentUser.id && member.groupId === group.id
+          )
+      )
+    : [];
+
+  // Filter expenses to only show those from the user's groups
+  const userExpenses = currentUser
+    ? expenses.filter(expense => {
+        // Check if the expense belongs to a group the user is a member of
+        return groupMembers.some(
+          member => member.userId === currentUser.id && member.groupId === expense.groupId
+        );
+      })
+    : [];
 
   // If loading, show loading state
   if (isLoading) {
@@ -84,11 +108,11 @@ export default function Dashboard() {
           <CardHeader className="pb-3 pt-3 bg-gradient-to-r from-gray-50 to-gray-50/50 border-b">
             <CardTitle className="text-sm font-medium text-gray-700 flex items-center gap-2">
               <Users size={16} className="text-primary flex-shrink-0" />
-              <span className="truncate">Total Groups</span>
+              <span className="truncate">My Groups</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-6 pb-6 flex-grow flex flex-col justify-center">
-            <div className="text-3xl font-bold truncate">{groups.length}</div>
+            <div className="text-3xl font-bold truncate">{userGroups.length}</div>
             <p className="text-sm text-gray-500 mt-1 truncate">Active expense groups</p>
           </CardContent>
         </Card>
@@ -141,8 +165,8 @@ export default function Dashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-6 pb-6 flex-grow flex flex-col justify-center">
-            {expenses && expenses.length > 0 ? (
-              <div className="text-3xl font-bold truncate">{expenses.length}</div>
+            {userExpenses && userExpenses.length > 0 ? (
+              <div className="text-3xl font-bold truncate">{userExpenses.length}</div>
             ) : (
               <div className="text-center py-2">
                 <p className="text-sm text-gray-500 truncate">No recent activities</p>
@@ -182,7 +206,7 @@ export default function Dashboard() {
       </div>
 
       {/* Display empty state if no groups */}
-      {groups.length === 0 ? (
+      {userGroups.length === 0 ? (
         <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50/50 p-8 text-center animate-gentle-slide">
           <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
             <Users size={24} className="text-primary" />
@@ -196,7 +220,7 @@ export default function Dashboard() {
           </Button>
         </div>
       ) : (
-        <GroupList groups={groups} limit={4} />
+        <GroupList groups={userGroups} limit={4} />
       )}
 
       {/* Mobile floating action button for quick expense creation */}

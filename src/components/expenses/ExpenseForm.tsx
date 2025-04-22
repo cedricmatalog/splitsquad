@@ -31,8 +31,21 @@ export function ExpenseForm({
   isEditing = false,
 }: ExpenseFormProps) {
   const router = useRouter();
-  const { groups, users, setExpenses, setExpenseParticipants, currentUser } = useAppContext();
+  const { groups, users, setExpenses, setExpenseParticipants, currentUser, groupMembers } =
+    useAppContext();
   const { getGroupMembers } = useExpenseCalculations();
+
+  // Filter groups to only show those the user is a member of
+  const userGroups = useMemo(() => {
+    if (!currentUser) return [];
+    return groups.filter(
+      group =>
+        // User created the group
+        group.createdBy === currentUser.id ||
+        // User is a member of the group
+        groupMembers.some(member => member.userId === currentUser.id && member.groupId === group.id)
+    );
+  }, [groups, currentUser, groupMembers]);
 
   const [description, setDescription] = useState(expense?.description || '');
   const [amount, setAmount] = useState(expense?.amount?.toString() || '');
@@ -45,7 +58,7 @@ export function ExpenseForm({
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   // Memoized group members to prevent recalculation
-  const groupMembers = useMemo(() => {
+  const groupMembersMemo = useMemo(() => {
     if (!selectedGroupId) return [];
     return getGroupMembers(selectedGroupId);
   }, [selectedGroupId, getGroupMembers]);
@@ -79,7 +92,7 @@ export function ExpenseForm({
     // Only initialize if we have a selected group and values not already set
     if (isEditing && expenseParticipants && expenseParticipants.length > 0) {
       // If editing, use existing participants and their shares
-      const members = groupMembers;
+      const members = groupMembersMemo;
       const memberIds = members.map(member => member.id);
 
       const existingShares = memberIds.map(memberId => {
@@ -100,14 +113,14 @@ export function ExpenseForm({
       // For new expense, set up initial shares based on amount
       const amountValue = parseFloat(amount);
       if (!isNaN(amountValue)) {
-        const memberIds = groupMembers.map(member => member.id);
+        const memberIds = groupMembersMemo.map(member => member.id);
         const equalShares = calculateEqualShares(memberIds, amountValue);
         setShares(equalShares);
       }
     }
   }, [
     selectedGroupId,
-    groupMembers,
+    groupMembersMemo,
     isEditing,
     expenseParticipants,
     amount,
@@ -158,11 +171,11 @@ export function ExpenseForm({
       const amountValue = parseFloat(value);
       if (isNaN(amountValue)) return;
 
-      const memberIds = groupMembers.map(member => member.id);
+      const memberIds = groupMembersMemo.map(member => member.id);
       const equalShares = calculateEqualShares(memberIds, amountValue);
       setShares(equalShares);
     },
-    [splitType, selectedGroupId, groupMembers, calculateEqualShares]
+    [splitType, selectedGroupId, groupMembersMemo, calculateEqualShares]
   );
 
   // Handle split type changes
@@ -173,13 +186,13 @@ export function ExpenseForm({
       if (newSplitType === 'equal' && amount && selectedGroupId) {
         const amountValue = parseFloat(amount);
         if (!isNaN(amountValue)) {
-          const memberIds = groupMembers.map(member => member.id);
+          const memberIds = groupMembersMemo.map(member => member.id);
           const equalShares = calculateEqualShares(memberIds, amountValue);
           setShares(equalShares);
         }
       }
     },
-    [amount, selectedGroupId, groupMembers, calculateEqualShares]
+    [amount, selectedGroupId, groupMembersMemo, calculateEqualShares]
   );
 
   // Handle individual share changes
@@ -387,7 +400,7 @@ export function ExpenseForm({
                 disabled={isEditing} // Don't allow changing group when editing
               >
                 <option value="">Select a group</option>
-                {groups.map(group => (
+                {userGroups.map(group => (
                   <option key={group.id} value={group.id}>
                     {group.name}
                   </option>
