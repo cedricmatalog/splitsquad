@@ -157,6 +157,62 @@ export async function deleteExpenseParticipantByKeys(
   }
 }
 
+// Replace all expense participants for an expense
+export async function replaceExpenseParticipants(
+  expenseId: string,
+  newParticipants: Omit<ExpenseParticipant, 'expenseId'>[]
+): Promise<boolean> {
+  try {
+    console.log(`Replacing all participants for expense ${expenseId}`);
+    console.log(`New participants count: ${newParticipants.length}`);
+
+    // First delete all existing participants
+    const { error: deleteError } = await supabase
+      .from('expense_participants')
+      .delete()
+      .eq('expense_id', expenseId);
+
+    if (deleteError) {
+      console.error('Error deleting existing participants:', deleteError);
+      return false;
+    }
+
+    console.log(`Successfully deleted all existing participants for expense ${expenseId}`);
+
+    // If we have no new participants, we're done
+    if (newParticipants.length === 0) {
+      return true;
+    }
+
+    // Now insert all new participants
+    const dbParticipants = newParticipants.map(p => ({
+      expense_id: expenseId,
+      user_id: p.userId,
+      share: p.share,
+      created_at: new Date().toISOString(),
+    }));
+
+    console.log('Prepared participants for insertion:', dbParticipants);
+
+    const { error: insertError } = await supabase
+      .from('expense_participants')
+      .insert(dbParticipants);
+
+    if (insertError) {
+      console.error('Error inserting new participants:', insertError);
+      return false;
+    }
+
+    console.log(
+      `Successfully inserted ${newParticipants.length} participants for expense ${expenseId}`
+    );
+    return true;
+  } catch (error) {
+    console.error('Error replacing expense participants:', error);
+    return false;
+  }
+}
+
 // Helper function to convert database format to app format
 function convertFromExpenseParticipantDB(dbItem: unknown): ExpenseParticipant {
   const item = dbItem as Record<string, unknown>;
