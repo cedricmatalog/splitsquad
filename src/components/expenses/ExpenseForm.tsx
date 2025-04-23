@@ -261,6 +261,7 @@ export function ExpenseForm({
     setIsSubmitting(true);
 
     try {
+      console.log('Saving expense...');
       const expenseData = {
         groupId: selectedGroupId,
         description,
@@ -273,15 +274,19 @@ export function ExpenseForm({
 
       if (isEditing && expense?.id) {
         // Update existing expense
+        console.log('Updating existing expense:', expense.id);
         persistedExpense = await updateExpense(expense.id, expenseData);
       } else {
         // Create new expense
+        console.log('Creating new expense');
         persistedExpense = await createExpense(expenseData);
       }
 
       if (!persistedExpense) {
         throw new Error('Failed to save expense');
       }
+
+      console.log('Expense saved successfully:', persistedExpense.id);
 
       // Handle participants
       const newParticipantsData = shares.map(share => ({
@@ -292,22 +297,63 @@ export function ExpenseForm({
 
       if (isEditing && expense?.id) {
         // For edits, fetch current participants, delete them, then create new ones
-        const currentParticipants = await getExpenseParticipants({ expenseId: expense.id });
+        console.log('Updating expense participants');
+        try {
+          // Get current participants
+          console.log('Fetching current expense participants for', expense.id);
+          const currentParticipants = await getExpenseParticipants({ expenseId: expense.id });
+          console.log('Found existing participants:', currentParticipants.length);
 
-        // Use the new delete function
-        await Promise.all(
-          currentParticipants.map(p => deleteExpenseParticipantByKeys(p.expenseId, p.userId))
-        );
+          // Delete all current participants first
+          if (currentParticipants.length > 0) {
+            console.log('Deleting existing expense participants');
+            const deletePromises = currentParticipants.map(p =>
+              deleteExpenseParticipantByKeys(p.expenseId, p.userId)
+            );
 
-        // Recreate participants
-        const createdParticipants = await Promise.all(
-          newParticipantsData.map(p => createExpenseParticipant(p))
-        );
-        if (createdParticipants.some(p => p === null)) {
-          throw new Error('Failed to update some participants');
+            // Wait for all deletions to complete
+            const deleteResults = await Promise.all(deletePromises);
+            console.log('Delete results:', deleteResults);
+
+            // Check if any deletions failed
+            if (deleteResults.some(result => !result)) {
+              console.error('Some participant deletions failed');
+              throw new Error('Failed to delete some existing participants');
+            }
+          }
+
+          // Wait a moment to ensure database consistency
+          await new Promise(resolve => setTimeout(resolve, 200));
+
+          // Now create new participants
+          console.log('Creating new expense participants:', newParticipantsData.length);
+          const createdParticipants = [];
+
+          // Create participants one by one instead of in parallel
+          for (const participantData of newParticipantsData) {
+            try {
+              const participant = await createExpenseParticipant(participantData);
+              if (!participant) {
+                throw new Error(`Failed to create participant for user ${participantData.userId}`);
+              }
+              createdParticipants.push(participant);
+            } catch (err: unknown) {
+              console.error('Error creating participant:', err);
+              const errorMessage = err instanceof Error ? err.message : String(err);
+              throw new Error(`Failed to create participant: ${errorMessage}`);
+            }
+          }
+
+          console.log('Successfully created participants:', createdParticipants.length);
+        } catch (participantError: unknown) {
+          console.error('Error updating participants:', participantError);
+          const errorMessage =
+            participantError instanceof Error ? participantError.message : String(participantError);
+          throw new Error(`Failed to update participants: ${errorMessage}`);
         }
       } else {
         // For new expenses, create all participants
+        console.log('Creating expense participants');
         const createdParticipants = await Promise.all(
           newParticipantsData.map(p => createExpenseParticipant(p))
         );
@@ -318,6 +364,7 @@ export function ExpenseForm({
 
       // Update local state AFTER successful Supabase operations
       if (isEditing) {
+        console.log('Updating expense in local state');
         setExpenses(prev => prev.map(e => (e.id === persistedExpense!.id ? persistedExpense! : e)));
         // Update participants from context
         setExpenseParticipants(prev => [
@@ -326,16 +373,29 @@ export function ExpenseForm({
         ]);
       } else {
         // Add the new expense to context
+        console.log('Adding new expense to local state');
         setExpenses(prev => [...prev, persistedExpense!]);
         // Add the new participants to context
         setExpenseParticipants(prev => [...prev, ...(newParticipantsData as ExpenseParticipant[])]);
       }
 
       // Refresh all data to ensure everything is up-to-date
-      await refreshData();
+      console.log('Refreshing all data...');
+      try {
+        await refreshData();
+        console.log('Data refresh complete');
 
-      // Navigate after state updates and data refresh are done
-      router.push(`/groups/${selectedGroupId}`);
+        // Add a small delay to ensure everything is updated
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // Navigate after state updates and data refresh are done
+        console.log('Navigating to group page');
+        router.push(`/groups/${selectedGroupId}`);
+      } catch (refreshError) {
+        console.error('Error during data refresh:', refreshError);
+        // Still navigate even if refresh fails
+        router.push(`/groups/${selectedGroupId}`);
+      }
     } catch (error) {
       console.error('Error saving expense:', error);
       setErrors({ submit: 'Failed to save expense. Please try again.' });

@@ -84,6 +84,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setIsLoading(true);
         setLastError(null); // Clear any previous errors when starting a refresh
 
+        console.log('Making API calls...');
         // Create an error state for UI feedback
         const [
           usersData,
@@ -110,13 +111,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         console.log('- Payments:', paymentsData.length);
 
         // Batch state updates to reduce render cycles
-        // Use functional updates to ensure we're working with the latest state
+        console.log('Updating state with fetched data...');
         setUsers(usersData);
         setGroups(groupsData);
         setExpenses(expensesData);
         setGroupMembers(groupMembersData);
         setExpenseParticipants(expenseParticipantsData);
         setPayments(paymentsData);
+        console.log('State updates complete');
       } else {
         console.log('Skipping data refresh - no user is logged in');
       }

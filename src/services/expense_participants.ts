@@ -53,14 +53,22 @@ export async function createExpenseParticipant(
   expenseParticipant: Omit<ExpenseParticipant, 'id'>
 ): Promise<ExpenseParticipant | null> {
   try {
+    console.log(`Creating expense participant:`, expenseParticipant);
+    const dbData = convertToExpenseParticipantDB(expenseParticipant);
+    console.log('Converted to DB format:', dbData);
+
     const { data, error } = await supabase
       .from('expense_participants')
-      .insert(convertToExpenseParticipantDB(expenseParticipant))
+      .insert(dbData)
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase error creating expense participant:', error);
+      throw error;
+    }
 
+    console.log('Expense participant created successfully:', data);
     return convertFromExpenseParticipantDB(data);
   } catch (error) {
     console.error(`Error creating expenseParticipant:`, error);
@@ -110,13 +118,38 @@ export async function deleteExpenseParticipantByKeys(
   userId: string
 ): Promise<boolean> {
   try {
+    console.log(`Deleting expense participant: expenseId=${expenseId}, userId=${userId}`);
+
+    // First check if the record exists
+    const checkResult = await supabase
+      .from('expense_participants')
+      .select('*')
+      .match({ expense_id: expenseId, user_id: userId });
+
+    if (checkResult.error) {
+      console.error('Error checking if expense participant exists:', checkResult.error);
+      return false;
+    }
+
+    if (checkResult.data.length === 0) {
+      console.log(`No expense participant found for expenseId=${expenseId}, userId=${userId}`);
+      return true; // Nothing to delete, so technically successful
+    }
+
+    // Now perform the delete operation
     const { error } = await supabase
       .from('expense_participants')
       .delete()
       .match({ expense_id: expenseId, user_id: userId });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase error deleting expense participant:', error);
+      throw error;
+    }
 
+    console.log(
+      `Successfully deleted expense participant for expenseId=${expenseId}, userId=${userId}`
+    );
     return true;
   } catch (error) {
     console.error(`Error deleting expenseParticipant by keys:`, error);

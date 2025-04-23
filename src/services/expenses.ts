@@ -66,15 +66,23 @@ export async function updateExpense(
   expense: Partial<Expense>
 ): Promise<Expense | null> {
   try {
+    console.log(`Updating expense ${id} with data:`, expense);
+    const dbData = convertToExpenseDB({ ...expense, id });
+    console.log('Converted to DB format:', dbData);
+
     const { data, error } = await supabase
       .from('expenses')
-      .update(convertToExpenseDB({ ...expense, id }))
+      .update(dbData)
       .eq('id', id)
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase error updating expense:', error);
+      throw error;
+    }
 
+    console.log('Expense updated successfully, received:', data);
     return convertFromExpenseDB(data);
   } catch (error) {
     console.error(`Error updating expense:`, error);
