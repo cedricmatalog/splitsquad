@@ -3,7 +3,7 @@
 import { ReactNode, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useUserData } from '@/context/AppContext';
+import { useAppContext } from '@/context/AppContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -46,7 +46,7 @@ interface AppLayoutProps {
 export function AppLayout({ children }: AppLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { currentUser, logout, isLoading } = useUserData();
+  const { currentUser, logout, isLoading } = useAppContext();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Skip layout on landing page
