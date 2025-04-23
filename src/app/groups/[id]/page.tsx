@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, use, useEffect } from 'react';
+import { useState, useRef, use } from 'react';
 import Link from 'next/link';
 import { useAppContext } from '@/context/AppContext';
 import useExpenseCalculations from '@/hooks/useExpenseCalculations';
@@ -25,6 +25,7 @@ import { PaymentHistory } from '@/components/payments/PaymentHistory';
 import { createGroupMember, deleteGroupMemberByKeys } from '@/services/group_members';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
+import useAuthRedirect from '@/hooks/useAuthRedirect';
 
 // Spinner component
 function Spinner({ className }: { className?: string }) {
@@ -60,8 +61,12 @@ export default function GroupDetails({ params }: { params: Promise<{ id: string 
     groupMembers: allGroupMembers,
     setGroupMembers,
     currentUser,
+    isLoading: contextLoading,
   } = useAppContext();
+  const { isReady } = useAuthRedirect();
   const { getGroupExpenses, getGroupMembers } = useExpenseCalculations();
+  // We might need the router later, so we'll keep it but mark it as unused
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const router = useRouter();
 
   const [activeTab, setActiveTab] = useState('expenses');
@@ -70,25 +75,12 @@ export default function GroupDetails({ params }: { params: Promise<{ id: string 
   const [copySuccess, setCopySuccess] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   const shareUrlRef = useRef<HTMLInputElement>(null);
 
   const group = groups.find(g => g.id === groupId);
 
-  // Redirect to login if user is not authenticated
-  useEffect(() => {
-    if (!currentUser) {
-      // Save current URL for redirection after login
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('redirectAfterLogin', window.location.pathname);
-      }
-      router.push('/login');
-    } else {
-      setIsLoading(false);
-    }
-  }, [currentUser, router]);
-
-  if (isLoading) {
+  // If still loading, show spinner
+  if (contextLoading || !isReady) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Spinner className="h-8 w-8" />
@@ -321,7 +313,12 @@ export default function GroupDetails({ params }: { params: Promise<{ id: string 
           </TabsList>
 
           <TabsContent value="expenses">
-            <ExpenseList expenses={groupExpenses} groupId={groupId} showGroupColumn={false} />
+            <ExpenseList
+              expenses={groupExpenses}
+              groupId={groupId}
+              showGroupColumn={false}
+              limit={6}
+            />
           </TabsContent>
 
           <TabsContent value="payments">

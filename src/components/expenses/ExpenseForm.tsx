@@ -31,8 +31,15 @@ export function ExpenseForm({
   isEditing = false,
 }: ExpenseFormProps) {
   const router = useRouter();
-  const { groups, users, setExpenses, setExpenseParticipants, currentUser, groupMembers } =
-    useAppContext();
+  const {
+    groups,
+    users,
+    setExpenses,
+    setExpenseParticipants,
+    currentUser,
+    groupMembers,
+    refreshData,
+  } = useAppContext();
   const { getGroupMembers } = useExpenseCalculations();
 
   // Filter groups to only show those the user is a member of
@@ -324,7 +331,10 @@ export function ExpenseForm({
         setExpenseParticipants(prev => [...prev, ...(newParticipantsData as ExpenseParticipant[])]);
       }
 
-      // Navigate after state updates are done
+      // Refresh all data to ensure everything is up-to-date
+      await refreshData();
+
+      // Navigate after state updates and data refresh are done
       router.push(`/groups/${selectedGroupId}`);
     } catch (error) {
       console.error('Error saving expense:', error);

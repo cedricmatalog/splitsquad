@@ -20,7 +20,7 @@ import { PageHeader } from '@/components/PageHeader';
 import { PlusCircle, Users, Calendar } from 'lucide-react';
 
 export default function Groups() {
-  const { groups, groupMembers, currentUser } = useAppContext();
+  const { groups, groupMembers, currentUser, isLoading: contextLoading } = useAppContext();
   const { getGroupMembers } = useExpenseCalculations();
   const [searchTerm, setSearchTerm] = useState('');
   const router = useRouter();
@@ -28,16 +28,18 @@ export default function Groups() {
 
   // Redirect to login if user is not authenticated
   useEffect(() => {
-    if (!currentUser) {
-      // Save current URL for redirection after login
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('redirectAfterLogin', window.location.pathname);
+    if (!contextLoading) {
+      if (!currentUser) {
+        // Save current URL for redirection after login
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('redirectAfterLogin', window.location.pathname);
+        }
+        router.push('/login');
+      } else {
+        setIsLoading(false);
       }
-      router.push('/login');
-    } else {
-      setIsLoading(false);
     }
-  }, [currentUser, router]);
+  }, [currentUser, router, contextLoading]);
 
   // Filter groups to only show those the user is a member of or created
   const userGroups = groups.filter(
@@ -58,7 +60,7 @@ export default function Groups() {
       group.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (isLoading) {
+  if (contextLoading || isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>

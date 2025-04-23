@@ -1,38 +1,52 @@
 'use client';
 
-import { Suspense } from 'react';
+import { useAppContext } from '@/context/AppContext';
 import { useSearchParams } from 'next/navigation';
-import Link from 'next/link';
 import { ExpenseForm } from '@/components/expenses/ExpenseForm';
+import { PageHeader } from '@/components/PageHeader';
+import { AuthCheck } from '@/components/AuthCheck';
+import { Suspense } from 'react';
 
-function NewExpensePage() {
+// Create a component that uses useSearchParams
+function ExpenseFormWithGroup() {
+  const { groups } = useAppContext();
   const searchParams = useSearchParams();
-  const preSelectedGroupId = searchParams.get('groupId');
+  const groupId = searchParams.get('groupId');
+
+  // Find the group if a groupId was provided
+  const group = groupId ? groups.find(g => g.id === groupId) : undefined;
 
   return (
-    <div className="container mx-auto py-8 max-w-3xl">
-      <div className="mb-8">
-        <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
-          <Link href="/expenses" className="hover:underline">
-            Expenses
-          </Link>
-          <span>/</span>
-          <span>New Expense</span>
-        </div>
+    <>
+      <PageHeader
+        title="Add New Expense"
+        description={group ? `Adding to ${group.name}` : 'Record a new expense'}
+      />
 
-        <h1 className="text-3xl font-bold mb-2">Add New Expense</h1>
-        <p className="text-gray-500">Create a new expense to split with your group</p>
+      <div className="mt-8">
+        <ExpenseForm groupId={groupId || undefined} />
       </div>
-
-      <ExpenseForm groupId={preSelectedGroupId || undefined} />
-    </div>
+    </>
   );
 }
 
-export default function NewExpensePageWithSuspense() {
+// Main component using Suspense
+export default function NewExpensePage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <NewExpensePage />
-    </Suspense>
+    <AuthCheck>
+      <div className="container mx-auto py-8 max-w-5xl px-4 sm:px-6">
+        <Suspense
+          fallback={
+            <div>
+              <div className="h-10 w-48 bg-gray-200 animate-pulse rounded-md mb-4"></div>
+              <div className="h-6 w-64 bg-gray-200 animate-pulse rounded-md"></div>
+              <div className="mt-8 h-96 bg-gray-200 animate-pulse rounded-lg"></div>
+            </div>
+          }
+        >
+          <ExpenseFormWithGroup />
+        </Suspense>
+      </div>
+    </AuthCheck>
   );
 }

@@ -75,11 +75,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     []
   );
 
-  // Modify the refreshData function to use retries
+  // Add debugging to the refreshData function
   const refreshData = useCallback(async () => {
     try {
       // Only fetch data if user is authenticated
       if (currentUser) {
+        console.log('Refreshing data for user:', currentUser.id);
         setIsLoading(true);
         setLastError(null); // Clear any previous errors when starting a refresh
 
@@ -100,6 +101,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
           withRetry(() => getPayments()),
         ]);
 
+        console.log('Data refresh completed successfully:');
+        console.log('- Users:', usersData.length);
+        console.log('- Groups:', groupsData.length);
+        console.log('- Expenses:', expensesData.length);
+        console.log('- Group Members:', groupMembersData.length);
+        console.log('- Expense Participants:', expenseParticipantsData.length);
+        console.log('- Payments:', paymentsData.length);
+
         // Batch state updates to reduce render cycles
         // Use functional updates to ensure we're working with the latest state
         setUsers(usersData);
@@ -108,6 +117,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setGroupMembers(groupMembersData);
         setExpenseParticipants(expenseParticipantsData);
         setPayments(paymentsData);
+      } else {
+        console.log('Skipping data refresh - no user is logged in');
       }
     } catch (error) {
       console.error('Error refreshing data:', error);
@@ -118,13 +129,98 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [currentUser, withRetry]);
 
+  // Login function using Supabase
+  const login = useCallback(
+    async (email: string, password: string): Promise<User | null> => {
+      try {
+        const user = await signIn(email, password);
+        if (user) {
+          console.log('User logged in successfully:', user.id);
+          setCurrentUser(user);
+
+          // Store in localStorage if in browser environment
+          if (typeof window !== 'undefined') {
+            try {
+              localStorage.setItem('currentUser', JSON.stringify(user));
+            } catch (e) {
+              console.error('Error storing user in localStorage:', e);
+            }
+          }
+
+          // Explicitly refresh data after login
+          await refreshData();
+        }
+        return user;
+      } catch (error) {
+        console.error('Login error:', error);
+        return null;
+      }
+    },
+    [refreshData]
+  );
+
+  // Logout function using Supabase
+  const logout = useCallback(async () => {
+    try {
+      console.log('Logging out user');
+      await signOut();
+      setCurrentUser(null);
+
+      // Remove from localStorage if in browser environment
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.removeItem('currentUser');
+        } catch (e) {
+          console.error('Error removing user from localStorage:', e);
+        }
+      }
+
+      // Clear all data
+      setUsers([]);
+      setGroups([]);
+      setExpenses([]);
+      setGroupMembers([]);
+      setExpenseParticipants([]);
+      setPayments([]);
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  }, []);
+
   // Load current user from Supabase on mount
   useEffect(() => {
     async function loadUser() {
       try {
+        console.log('Loading current user from auth service');
         const user = await getCurrentUser();
         if (user) {
+          console.log('Found authenticated user:', user.id);
           setCurrentUser(user);
+
+          // Store in localStorage for redundancy if in browser environment
+          if (typeof window !== 'undefined') {
+            try {
+              localStorage.setItem('currentUser', JSON.stringify(user));
+            } catch (e) {
+              console.error('Error storing user in localStorage:', e);
+            }
+          }
+        } else {
+          console.log('No authenticated user found');
+
+          // Check localStorage as fallback if in browser environment
+          if (typeof window !== 'undefined') {
+            try {
+              const persistedUser = localStorage.getItem('currentUser');
+              if (persistedUser) {
+                const user = JSON.parse(persistedUser);
+                console.log(`Found persisted user in localStorage: ${user.id}`);
+                setCurrentUser(user);
+              }
+            } catch (e) {
+              console.error('Error checking localStorage:', e);
+            }
+          }
         }
       } catch (error) {
         console.error('Error loading user:', error);
@@ -139,40 +235,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Load data when currentUser changes
   useEffect(() => {
     if (currentUser) {
+      console.log('Current user changed, refreshing data');
       refreshData();
     }
   }, [currentUser, refreshData]);
-
-  // Login function using Supabase
-  const login = useCallback(async (email: string, password: string): Promise<User | null> => {
-    try {
-      const user = await signIn(email, password);
-      if (user) {
-        setCurrentUser(user);
-      }
-      return user;
-    } catch (error) {
-      console.error('Login error:', error);
-      return null;
-    }
-  }, []);
-
-  // Logout function using Supabase
-  const logout = useCallback(async () => {
-    try {
-      await signOut();
-      setCurrentUser(null);
-      // Clear all data
-      setUsers([]);
-      setGroups([]);
-      setExpenses([]);
-      setGroupMembers([]);
-      setExpenseParticipants([]);
-      setPayments([]);
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
-  }, []);
 
   // Memoize the context value to prevent unnecessary re-renders
   const contextValue = useMemo(

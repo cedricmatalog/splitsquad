@@ -7,9 +7,8 @@ import { UserBalanceCard } from '@/components/dashboard/UserBalanceCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
 import { PlusCircle, Users, Clock, ArrowRight } from 'lucide-react';
+import useAuthRedirect from '@/hooks/useAuthRedirect';
 
 /**
  * Renders the main dashboard page.
@@ -23,15 +22,8 @@ import { PlusCircle, Users, Clock, ArrowRight } from 'lucide-react';
  * Handles loading states and redirects unauthenticated users to the login page.
  */
 export default function Dashboard() {
-  const { groups, expenses, isAuthenticated, isLoading, currentUser, groupMembers } =
-    useAppContext();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.push('/login');
-    }
-  }, [isAuthenticated, isLoading, router]);
+  const { groups, expenses, isLoading, currentUser, groupMembers } = useAppContext();
+  const { isReady } = useAuthRedirect();
 
   // Filter groups to only show those the user is a member of or created
   const userGroups = currentUser
@@ -57,7 +49,7 @@ export default function Dashboard() {
     : [];
 
   // If loading, show loading state
-  if (isLoading) {
+  if (isLoading || !isReady) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <div className="text-center animate-gentle-slide">
@@ -66,11 +58,6 @@ export default function Dashboard() {
         </div>
       </div>
     );
-  }
-
-  // If not authenticated and not loading, show nothing while redirecting
-  if (!isAuthenticated) {
-    return null;
   }
 
   // Show skeleton if data is still loading but user is authenticated

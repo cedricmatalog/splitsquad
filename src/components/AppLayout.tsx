@@ -3,7 +3,7 @@
 import { ReactNode, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useAppContext } from '@/context/AppContext';
+import { useUserData } from '@/context/AppContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -46,7 +46,7 @@ interface AppLayoutProps {
 export function AppLayout({ children }: AppLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { currentUser, logout } = useAppContext();
+  const { currentUser, logout, isLoading } = useUserData();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Skip layout on landing page
@@ -145,7 +145,11 @@ export function AppLayout({ children }: AppLayoutProps) {
               <Menu size={24} />
             </Button>
 
-            {currentUser && (
+            {isLoading ? (
+              // Show a loading placeholder when auth state is loading
+              <div className="h-10 w-10 rounded-full bg-gray-200 animate-pulse"></div>
+            ) : currentUser ? (
+              // Show user dropdown when authenticated
               <div className="flex items-center">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -184,6 +188,11 @@ export function AppLayout({ children }: AppLayoutProps) {
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
+            ) : (
+              // Show login button when not authenticated
+              <Button asChild size="sm" variant="outline">
+                <Link href="/login">Log In</Link>
+              </Button>
             )}
           </div>
         </div>
@@ -268,7 +277,19 @@ export function AppLayout({ children }: AppLayoutProps) {
             </div>
           </nav>
 
-          {currentUser && (
+          {isLoading ? (
+            // Loading state for mobile profile
+            <div className="border-t p-4">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="h-10 w-10 rounded-full bg-gray-200 animate-pulse"></div>
+                <div className="flex-1">
+                  <div className="h-4 w-24 bg-gray-200 animate-pulse rounded"></div>
+                  <div className="h-3 w-32 bg-gray-200 animate-pulse rounded mt-1"></div>
+                </div>
+              </div>
+            </div>
+          ) : currentUser ? (
+            // Authenticated user mobile profile
             <div className="border-t p-4">
               <div className="flex items-center gap-3 mb-4">
                 <Avatar className="h-10 w-10 border-2 border-primary/10">
@@ -277,30 +298,43 @@ export function AppLayout({ children }: AppLayoutProps) {
                     {currentUser.name.charAt(0)}
                   </AvatarFallback>
                 </Avatar>
-                <div>
-                  <p className="font-medium">{currentUser.name}</p>
-                  <p className="text-xs text-gray-500">{currentUser.email}</p>
+
+                <div className="flex-1">
+                  <div className="font-medium">{currentUser.name}</div>
+                  <div className="text-xs text-gray-500 truncate">{currentUser.email}</div>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Button variant="outline" size="sm" className="w-full justify-start" asChild>
-                  <Link href="/settings" onClick={toggleMobileMenu}>
-                    Settings
-                  </Link>
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  className="w-full justify-start"
-                  onClick={() => {
-                    handleSignOut();
-                    toggleMobileMenu();
-                  }}
+              <Button
+                variant="outline"
+                className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+                onClick={handleSignOut}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="mr-2"
                 >
-                  Sign Out
-                </Button>
-              </div>
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16 17 21 12 16 7" />
+                  <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+                Sign out
+              </Button>
+            </div>
+          ) : (
+            // Login button for mobile
+            <div className="border-t p-4">
+              <Button asChild className="w-full">
+                <Link href="/login">Log In</Link>
+              </Button>
             </div>
           )}
         </div>

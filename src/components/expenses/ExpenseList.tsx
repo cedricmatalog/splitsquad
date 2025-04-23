@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { format, isAfter, isBefore, startOfDay, endOfDay } from 'date-fns';
-import { Search, Calendar, X, PlusCircle, Eye } from 'lucide-react';
+import { Search, Calendar, X, PlusCircle, Eye, ArrowRight } from 'lucide-react';
 import { useVirtualList } from '@/hooks/useVirtualList';
 import React from 'react';
 
@@ -26,16 +26,23 @@ interface ExpenseListProps {
   expenses: Expense[];
   groupId?: string;
   showGroupColumn?: boolean;
+  limit?: number;
 }
 
 // Detect test environment
 const isTestEnvironment = typeof process !== 'undefined' && process.env.NODE_ENV === 'test';
 
-function ExpenseListComponent({ expenses, groupId, showGroupColumn = true }: ExpenseListProps) {
+function ExpenseListComponent({
+  expenses,
+  groupId,
+  showGroupColumn = true,
+  limit,
+}: ExpenseListProps) {
   const { users, groups } = useAppContext();
   const [searchTerm, setSearchTerm] = useState('');
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const [showAll, setShowAll] = useState(false);
 
   // Memoize helper functions
   const getUserName = useCallback(
@@ -99,6 +106,11 @@ function ExpenseListComponent({ expenses, groupId, showGroupColumn = true }: Exp
     });
   }, [expenses, searchTerm, startDate, endDate, getUserName, getGroupName, showGroupColumn]);
 
+  // Apply the limit to filtered expenses if provided (and showAll is false)
+  const displayExpenses = useMemo(() => {
+    return limit && !showAll ? filteredExpenses.slice(0, limit) : filteredExpenses;
+  }, [filteredExpenses, limit, showAll]);
+
   const resetFilters = useCallback(() => {
     setSearchTerm('');
     setStartDate(undefined);
@@ -110,7 +122,7 @@ function ExpenseListComponent({ expenses, groupId, showGroupColumn = true }: Exp
 
   // Set up virtual list for better performance with large datasets
   const { virtualItems, totalHeight } = useVirtualList<HTMLTableSectionElement>({
-    itemCount: filteredExpenses.length || 1, // At least 1 for "no expenses found" row
+    itemCount: displayExpenses.length || 1, // At least 1 for "no expenses found" row
     itemHeight: 56, // Approximate height of a table row
     containerRef: tableBodyRef,
   });
@@ -128,7 +140,7 @@ function ExpenseListComponent({ expenses, groupId, showGroupColumn = true }: Exp
     return () => {
       element.removeEventListener('scroll', handleScroll);
     };
-  }, [filteredExpenses.length]);
+  }, [displayExpenses.length]);
 
   // Render a virtualized table row
   const renderTableRow = useCallback(
@@ -187,33 +199,33 @@ function ExpenseListComponent({ expenses, groupId, showGroupColumn = true }: Exp
   // Render the table content based on environment
   const renderTableContent = () => {
     // In test environment, render a simple version without virtualization
-    if (isTestEnvironment) {
+    if (isTestEnvironment || displayExpenses.length <= 100) {
       return (
         <TableBody>
-          {filteredExpenses.length > 0
-            ? filteredExpenses.map(expense => renderTableRow(expense))
+          {displayExpenses.length > 0
+            ? displayExpenses.map(expense => renderTableRow(expense))
             : emptyStateRow}
         </TableBody>
       );
     }
 
-    // In production, use virtualized list
+    // In production with large datasets (>100 items), use virtualized list
     return (
       <TableBody
         ref={tableBodyRef}
         style={{
-          height: filteredExpenses.length > 10 ? '400px' : 'auto',
-          overflowY: filteredExpenses.length > 10 ? 'auto' : 'visible',
+          height: '400px', // Fixed height for scrollable area
+          overflowY: 'auto',
           position: 'relative',
         }}
       >
-        {filteredExpenses.length > 0 ? (
+        {displayExpenses.length > 0 ? (
           <>
             {/* Spacer div to maintain total scroll height */}
             <div style={{ height: totalHeight, position: 'relative' }}>
               {/* Only render visible items */}
               {virtualItems.map(virtualItem => {
-                const expense = filteredExpenses[virtualItem.index];
+                const expense = displayExpenses[virtualItem.index];
                 return (
                   <div
                     key={expense.id}
@@ -311,8 +323,40 @@ function ExpenseListComponent({ expenses, groupId, showGroupColumn = true }: Exp
               </TableRow>
             </TableHeader>
             {renderTableContent()}
+
+            {/* Debug info */}
+            <caption className="mt-2 text-sm text-gray-500 text-right">
+              Total: {filteredExpenses.length} expenses ({displayExpenses.length} visible)
+            </caption>
           </Table>
         </div>
+
+        {/* Show "View All" button when limited and there are more items */}
+        {limit && filteredExpenses.length > limit && !showAll && (
+          <div className="mt-4 text-center">
+            <Button
+              variant="outline"
+              onClick={() => setShowAll(true)}
+              className="flex items-center gap-2 mx-auto"
+            >
+              <span>View All Expenses</span>
+              <ArrowRight size={16} />
+            </Button>
+          </div>
+        )}
+
+        {/* Show "Show Less" button when showing all */}
+        {showAll && limit && (
+          <div className="mt-4 text-center">
+            <Button
+              variant="outline"
+              onClick={() => setShowAll(false)}
+              className="flex items-center gap-2 mx-auto"
+            >
+              <span>Show Less</span>
+            </Button>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

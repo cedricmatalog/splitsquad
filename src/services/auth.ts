@@ -192,12 +192,22 @@ export async function signIn(email: string, password: string): Promise<User | nu
       }
 
       // Convert to our app User type
-      return {
+      const user = {
         id: userData.id,
         name: userData.name,
         email: userData.email,
         avatar: userData.avatar_url || '',
       };
+
+      // Store user in localStorage for persistence
+      try {
+        localStorage.setItem('currentUser', JSON.stringify(user));
+        console.log('User stored in localStorage for persistence');
+      } catch (e) {
+        console.error('Error storing user in localStorage:', e);
+      }
+
+      return user;
     }
 
     // If Supabase auth fails, try to find user in localStorage
@@ -266,14 +276,18 @@ export async function signIn(email: string, password: string): Promise<User | nu
 export async function signOut(): Promise<void> {
   try {
     console.log('Signing out user');
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      console.error('Error during sign out:', error);
-      throw error;
+    await supabase.auth.signOut();
+
+    // Remove the user from localStorage
+    try {
+      localStorage.removeItem('currentUser');
+      console.log('User removed from localStorage');
+    } catch (e) {
+      console.error('Error removing user from localStorage:', e);
     }
-    console.log('User signed out successfully');
-  } catch (error: unknown) {
-    console.error('Error during sign out:', error);
+  } catch (error) {
+    console.error('Error signing out:', error);
+    throw error;
   }
 }
 
@@ -281,6 +295,7 @@ export async function getCurrentUser(): Promise<User | null> {
   try {
     console.log('Checking for current user session');
 
+    // First, check if there's an active Supabase session
     const {
       data: { session },
       error: authError,
@@ -291,51 +306,84 @@ export async function getCurrentUser(): Promise<User | null> {
       throw authError;
     }
 
-    if (!session?.user) {
-      console.log('No active session found');
-      return null;
-    }
+    if (session?.user) {
+      console.log(`Active session found for user: ${session.user.id}`);
 
-    console.log(`Active session found for user: ${session.user.id}`);
+      // Get user profile from our users table
+      let userData;
+      let userError;
 
-    // Get user profile from our users table
-    let userData;
-    let userError;
-
-    // Try to get user by ID (which should match the auth user ID)
-    console.log(`Looking for user profile with ID: ${session.user.id}`);
-
-    ({ data: userData, error: userError } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', session.user.id)
-      .single());
-
-    // If that fails, try by email
-    if (userError || !userData) {
-      console.log(`User not found by ID, trying email: ${session.user.email}`);
+      // Try to get user by ID (which should match the auth user ID)
+      console.log(`Looking for user profile with ID: ${session.user.id}`);
 
       ({ data: userData, error: userError } = await supabase
         .from('users')
         .select('*')
-        .eq('email', session.user.email)
+        .eq('id', session.user.id)
         .single());
 
+      // If that fails, try by email
       if (userError || !userData) {
-        console.error('Could not find user profile');
-        return null;
+        console.log(`User not found by ID, trying email: ${session.user.email}`);
+
+        ({ data: userData, error: userError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('email', session.user.email)
+          .single());
+
+        if (userError || !userData) {
+          console.error('Could not find user profile');
+          return null;
+        }
       }
+
+      console.log(`Found user profile: ${userData.id}`);
+
+      // Convert to our app User type
+      return {
+        id: userData.id,
+        name: userData.name,
+        email: userData.email,
+        avatar: userData.avatar_url || '',
+      };
     }
 
-    console.log(`Found user profile: ${userData.id}`);
+    // If no Supabase session, check localStorage for persisted user
+    console.log('No active Supabase session, checking localStorage');
 
-    // Convert to our app User type
-    return {
-      id: userData.id,
-      name: userData.name,
-      email: userData.email,
-      avatar: userData.avatar_url || '',
-    };
+    try {
+      const persistedUser = localStorage.getItem('currentUser');
+      if (persistedUser) {
+        const user = JSON.parse(persistedUser);
+        console.log(`Found persisted user in localStorage: ${user.id}`);
+
+        // Verify that this user exists in the database
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        if (!userError && userData) {
+          console.log(`Verified persisted user exists in database: ${userData.id}`);
+          return {
+            id: userData.id,
+            name: userData.name,
+            email: userData.email,
+            avatar: userData.avatar_url || '',
+          };
+        } else {
+          console.log('Persisted user not found in database, removing from localStorage');
+          localStorage.removeItem('currentUser');
+        }
+      }
+    } catch (e) {
+      console.error('Error checking localStorage:', e);
+    }
+
+    console.log('No active session found');
+    return null;
   } catch (error) {
     console.error('Error getting current user:', error);
     return null;
