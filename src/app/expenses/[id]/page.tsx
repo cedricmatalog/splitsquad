@@ -17,6 +17,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { format } from 'date-fns';
+import { deleteExpense } from '@/services/expenses';
+import { deleteExpenseParticipantsByExpenseId } from '@/services/expense_participants';
 
 export default function ExpenseDetails({ params }: { params: Promise<{ id: string }> }) {
   const { id: expenseId } = use(params);
@@ -29,11 +31,13 @@ export default function ExpenseDetails({ params }: { params: Promise<{ id: strin
     setExpenseParticipants,
     currentUser,
     groupMembers,
+    refreshData,
   } = useAppContext();
   const { getExpenseParticipants } = useExpenseCalculations();
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const expense = expenses.find(e => e.id === expenseId);
 
@@ -114,11 +118,48 @@ export default function ExpenseDetails({ params }: { params: Promise<{ id: strin
     }).format(amount);
   };
 
-  const handleDelete = () => {
-    setExpenses(prev => prev.filter(e => e.id !== expenseId));
-    setExpenseParticipants(prev => prev.filter(p => p.expenseId !== expenseId));
+  const handleDelete = async () => {
+    try {
+      setIsDeleting(true);
 
-    router.push(`/groups/${expense.groupId}`);
+      // First delete all expense participants
+      const participantsDeleted = await deleteExpenseParticipantsByExpenseId(expenseId);
+      if (!participantsDeleted) {
+        console.warn('Failed to delete expense participants, but will attempt to delete expense');
+      }
+
+      // Then delete the expense itself
+      const expenseDeleted = await deleteExpense(expenseId);
+      if (!expenseDeleted) {
+        throw new Error('Failed to delete expense from database');
+      }
+
+      // Store group ID for navigation since we're about to close the dialog
+      const groupId = expense.groupId;
+
+      // Close the dialog immediately before any state updates
+      setIsDeleteDialogOpen(false);
+
+      // Navigate immediately to prevent UI flicker
+      router.push(`/groups/${groupId}`);
+
+      // Update local state after navigation has been initiated
+      setExpenses(prev => prev.filter(e => e.id !== expenseId));
+      setExpenseParticipants(prev => prev.filter(p => p.expenseId !== expenseId));
+
+      // Refresh data in the background after navigation
+      setTimeout(() => {
+        refreshData().catch(error => {
+          console.warn('Failed to refresh data after deleting expense:', error);
+        });
+      }, 100);
+    } catch (error) {
+      console.error('Error deleting expense:', error);
+      // Show error message to user
+      setIsDeleting(false);
+      setIsDeleteDialogOpen(false);
+      alert('Failed to delete expense. Please try again.');
+    }
   };
 
   return (
@@ -236,11 +277,15 @@ export default function ExpenseDetails({ params }: { params: Promise<{ id: strin
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setIsDeleteDialogOpen(false)}
+              disabled={isDeleting}
+            >
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleDelete}>
-              Delete
+            <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
+              {isDeleting ? 'Deleting...' : 'Delete'}
             </Button>
           </DialogFooter>
         </DialogContent>

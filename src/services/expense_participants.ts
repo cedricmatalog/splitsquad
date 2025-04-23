@@ -213,6 +213,29 @@ export async function replaceExpenseParticipants(
   }
 }
 
+// Delete all expense participants for an expense
+export async function deleteExpenseParticipantsByExpenseId(expenseId: string): Promise<boolean> {
+  try {
+    console.log(`Deleting all participants for expense ${expenseId}`);
+
+    const { error } = await supabase
+      .from('expense_participants')
+      .delete()
+      .eq('expense_id', expenseId);
+
+    if (error) {
+      console.error('Error deleting expense participants:', error);
+      throw error;
+    }
+
+    console.log(`Successfully deleted all participants for expense ${expenseId}`);
+    return true;
+  } catch (error) {
+    console.error(`Error deleting expense participants by expense ID:`, error);
+    return false;
+  }
+}
+
 // Helper function to convert database format to app format
 function convertFromExpenseParticipantDB(dbItem: unknown): ExpenseParticipant {
   const item = dbItem as Record<string, unknown>;
