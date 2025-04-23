@@ -9,6 +9,7 @@ import {
   createExpenseParticipant,
   getExpenseParticipants,
   deleteExpenseParticipantByKeys,
+  replaceExpenseParticipants,
 } from '@/services/expense_participants';
 
 // Mock expense services
@@ -22,6 +23,7 @@ jest.mock('@/services/expense_participants', () => ({
   createExpenseParticipant: jest.fn(),
   getExpenseParticipants: jest.fn(),
   deleteExpenseParticipantByKeys: jest.fn(),
+  replaceExpenseParticipants: jest.fn(),
 }));
 
 // Mock useExpenseCalculations hook
@@ -153,6 +155,8 @@ describe('ExpenseForm', () => {
     );
 
     (deleteExpenseParticipantByKeys as jest.Mock).mockResolvedValue(true);
+
+    (replaceExpenseParticipants as jest.Mock).mockResolvedValue(true);
 
     // Mock useExpenseCalculations implementation
     (useExpenseCalculations as jest.Mock).mockReturnValue({
@@ -309,7 +313,7 @@ describe('ExpenseForm', () => {
 
     // Verify participants were created
     await waitFor(() => {
-      expect(createExpenseParticipant).toHaveBeenCalled();
+      expect(replaceExpenseParticipants).toHaveBeenCalled();
     });
 
     // Verify context was updated
@@ -360,9 +364,7 @@ describe('ExpenseForm', () => {
 
     // Verify participants were updated
     await waitFor(() => {
-      expect(getExpenseParticipants).toHaveBeenCalled();
-      expect(deleteExpenseParticipantByKeys).toHaveBeenCalled();
-      expect(createExpenseParticipant).toHaveBeenCalled();
+      expect(replaceExpenseParticipants).toHaveBeenCalled();
     });
 
     // Verify context was updated
