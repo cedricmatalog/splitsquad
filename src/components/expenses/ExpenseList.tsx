@@ -256,7 +256,7 @@ function VirtualizedTable({
 }
 
 // Main component
-function ExpenseListComponent({
+export function ExpenseList({
   expenses,
   groupId,
   showGroupColumn = true,
@@ -667,5 +667,7 @@ function ExpenseListComponent({
   );
 }
 
-// Use React.memo to prevent unnecessary re-renders
-export const ExpenseList = React.memo(ExpenseListComponent);
+// Memoized version for use in the app
+export default React.memo(ExpenseList);
+// Export unmemoized component for testing
+export { ExpenseList as ExpenseListComponent };

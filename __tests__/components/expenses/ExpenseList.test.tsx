@@ -1,6 +1,19 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { ExpenseList } from '@/components/expenses/ExpenseList';
+import { ExpenseListComponent as ExpenseList } from '@/components/expenses/ExpenseList';
 import { setupMocks } from '../../utils/test-utils';
+import React from 'react';
+
+// Mock the AppContext
+jest.mock('@/context/AppContext', () => ({
+  useAppContext: () => ({
+    users: [
+      { id: 'user-1', name: 'Alex Johnson', avatar: '/avatars/alex.jpg' },
+      { id: 'user-2', name: 'Jamie Smith', avatar: '/avatars/jamie.jpg' },
+    ],
+    groups: [{ id: 'group-1', name: 'Roommates', createdBy: 'user-1' }],
+    refreshData: jest.fn(),
+  }),
+}));
 
 // Mock the Lucide icons
 jest.mock('lucide-react', () => ({
@@ -9,6 +22,9 @@ jest.mock('lucide-react', () => ({
   X: () => <span data-testid="x-icon" />,
   PlusCircle: () => <span data-testid="plus-icon" />,
   Eye: () => <span data-testid="eye-icon" />,
+  ChevronLeft: () => <span data-testid="chevron-left" />,
+  ChevronRight: () => <span data-testid="chevron-right" />,
+  List: () => <span data-testid="list-icon" />,
 }));
 
 // Mock the DatePicker component to avoid testing issues
@@ -31,6 +47,14 @@ jest.mock('@/components/ui/date-picker', () => ({
       />
     </div>
   ),
+}));
+
+// Mock next/navigation
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: jest.fn(),
+    prefetch: jest.fn(),
+  }),
 }));
 
 // Setup mocks
