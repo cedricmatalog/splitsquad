@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { ExpenseListComponent as ExpenseList } from '@/components/expenses/ExpenseList';
+import { ExpenseList } from '@/components/expenses/list';
 import { setupMocks } from '../../utils/test-utils';
 import React from 'react';
 

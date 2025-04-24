@@ -1,0 +1,31 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Modular Architecture
+
+## Core Principles
+- Follow the Single Responsibility Principle for all components and modules
+- Break large files (>200 lines) into smaller, focused modules
+- Create appropriate abstractions to reduce code duplication
+- Use explicit, descriptive naming conventions
+
+## File Organization
+- Group related components in feature-specific directories
+- Use subdirectories to organize complex features with multiple components
+- Create index files to simplify imports and hide implementation details
+- Put shared utilities, types, and hooks in their respective directories
+
+## Component Composition
+- Compose complex UIs from smaller, focused components
+- Extract repeated patterns into reusable components
+- Separate UI components from data fetching and business logic
+- Use props for component configuration, not global state
+
+## State Management
+- Keep state as close as possible to where it's used
+- Use React Context for truly global state (auth, theme, etc.)
+- Minimize prop drilling by creating purpose-specific context providers
+- Extract complex state logic into custom hooks
+

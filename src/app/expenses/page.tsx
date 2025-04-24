@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAppContext } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
-import { ExpenseList } from '@/components/expenses/ExpenseList';
+import { ExpenseList } from '@/components/expenses/list';
 import { PageHeader } from '@/components/PageHeader';
 import { PlusCircle } from 'lucide-react';
 import { Expense } from '@/types';

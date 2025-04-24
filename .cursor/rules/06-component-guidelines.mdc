@@ -9,10 +9,17 @@ alwaysApply: false
 - Use components from the shadcn/ui library located in [src/components/ui](mdc:src/components/ui)
 - Follow Tailwind CSS for styling and use the `cn` utility for class merging
 
+## Component Structure
+- Components should be modular and focus on a single responsibility
+- Large components should be split into smaller, more manageable pieces
+- Use index files to simplify imports for related components
+
 ## Feature Components
 - Components are organized by feature domain:
+  - [src/components/layout](mdc:src/components/layout) - Layout and navigation components
   - [src/components/groups](mdc:src/components/groups) - Group management components
   - [src/components/expenses](mdc:src/components/expenses) - Expense tracking components
+  - [src/components/expenses/form](mdc:src/components/expenses/form) - Expense form components
   - [src/components/payments](mdc:src/components/payments) - Payment related components
   - [src/components/balances](mdc:src/components/balances) - Balance calculation components
   - [src/components/dashboard](mdc:src/components/dashboard) - Dashboard components
@@ -22,3 +29,4 @@ alwaysApply: false
 - For data fetching, use the appropriate service from [src/services](mdc:src/services)
 - Follow the existing patterns for error handling and loading states
 - Create reusable hooks in [src/hooks](mdc:src/hooks) for shared behavior
+- Extract complex calculations and validations into separate utility files

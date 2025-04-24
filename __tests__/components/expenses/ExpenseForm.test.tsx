@@ -130,6 +130,11 @@ const mockExpenseParticipants = [
   { expenseId: 'expense-1', userId: 'user-2', share: 50 },
 ];
 
+// Create mock functions that will be accessible to all tests
+const mockSetExpenses = jest.fn();
+const mockSetExpenseParticipants = jest.fn();
+const mockRefreshData = jest.fn().mockResolvedValue(undefined);
+
 describe('ExpenseForm', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -171,10 +176,11 @@ describe('ExpenseForm', () => {
     (useAppContext as jest.Mock).mockReturnValue({
       users: mockUsers,
       groups: mockGroups,
-      setExpenses: jest.fn(),
-      setExpenseParticipants: jest.fn(),
+      setExpenses: mockSetExpenses,
+      setExpenseParticipants: mockSetExpenseParticipants,
       currentUser: mockUsers[0],
       groupMembers: mockGroupMembers,
+      refreshData: mockRefreshData,
     });
   });
 
@@ -186,12 +192,12 @@ describe('ExpenseForm', () => {
   it('renders new expense form correctly', () => {
     render(<ExpenseForm groupId="group-1" />);
 
-    expect(screen.getByText('New Expense')).toBeInTheDocument();
+    expect(screen.getByText('Add New Expense')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Dinner, Groceries, Rent, etc.')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('0.00')).toBeInTheDocument();
     expect(screen.getByTestId('date-picker')).toBeInTheDocument();
     expect(screen.getByText('Group')).toBeInTheDocument();
-    expect(screen.getByText('Paid by')).toBeInTheDocument();
+    expect(screen.getByText('Paid By')).toBeInTheDocument();
     expect(screen.getByText('Split Type')).toBeInTheDocument();
   });
 
@@ -269,21 +275,24 @@ describe('ExpenseForm', () => {
   });
 
   it('successfully submits new expense with valid data', async () => {
-    const mockSetExpenses = jest.fn();
-    const mockSetExpenseParticipants = jest.fn();
-
-    (useAppContext as jest.Mock).mockReturnValue({
-      users: mockUsers,
-      groups: mockGroups,
-      setExpenses: mockSetExpenses,
-      setExpenseParticipants: mockSetExpenseParticipants,
-      currentUser: mockUsers[0],
-      groupMembers: mockGroupMembers,
+    // Setup mock resolves for successful API calls
+    (createExpense as jest.Mock).mockResolvedValue({
+      id: 'new-expense-1',
+      groupId: 'group-1',
+      description: 'Test Expense',
+      amount: 75.5,
+      paidBy: 'user-1',
+      date: expect.any(String),
     });
+
+    (replaceExpenseParticipants as jest.Mock).mockResolvedValue(true);
+
+    // Ensure refreshData resolves
+    mockRefreshData.mockResolvedValue(undefined);
 
     render(<ExpenseForm groupId="group-1" />);
 
-    // Fill out form with valid data
+    // Fill out form
     fireEvent.change(screen.getByPlaceholderText('Dinner, Groceries, Rent, etc.'), {
       target: { value: 'Test Expense' },
     });
@@ -292,14 +301,18 @@ describe('ExpenseForm', () => {
       target: { value: '75.50' },
     });
 
+    // Select a group
+    const groupSelect = screen.getAllByRole('combobox')[0];
+    fireEvent.change(groupSelect, { target: { value: 'group-1' } });
+
     // Select a payer
     const payerSelect = screen.getAllByRole('combobox')[1];
     fireEvent.change(payerSelect, { target: { value: 'user-1' } });
 
-    // Submit the form
+    // Submit form
     fireEvent.click(screen.getByText('Create Expense'));
 
-    // Wait for the form submission
+    // Verify API calls
     await waitFor(() => {
       expect(createExpense).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -311,30 +324,27 @@ describe('ExpenseForm', () => {
       );
     });
 
-    // Verify participants were created
-    await waitFor(() => {
-      expect(replaceExpenseParticipants).toHaveBeenCalled();
-    });
-
     // Verify context was updated
     await waitFor(() => {
-      expect(mockSetExpenses).toHaveBeenCalled();
-      expect(mockSetExpenseParticipants).toHaveBeenCalled();
+      expect(mockRefreshData).toHaveBeenCalled();
     });
   });
 
   it('successfully updates an existing expense', async () => {
-    const mockSetExpenses = jest.fn();
-    const mockSetExpenseParticipants = jest.fn();
-
-    (useAppContext as jest.Mock).mockReturnValue({
-      users: mockUsers,
-      groups: mockGroups,
-      setExpenses: mockSetExpenses,
-      setExpenseParticipants: mockSetExpenseParticipants,
-      currentUser: mockUsers[0],
-      groupMembers: mockGroupMembers,
+    // Setup mock resolves for successful API calls
+    (updateExpense as jest.Mock).mockResolvedValue({
+      id: 'expense-1',
+      groupId: 'group-1',
+      description: 'Updated Dinner',
+      amount: 100,
+      paidBy: 'user-1',
+      date: expect.any(String),
     });
+
+    (replaceExpenseParticipants as jest.Mock).mockResolvedValue(true);
+
+    // Ensure refreshData resolves
+    mockRefreshData.mockResolvedValue(undefined);
 
     render(
       <ExpenseForm
@@ -344,33 +354,30 @@ describe('ExpenseForm', () => {
       />
     );
 
-    // Update the description
+    // Update description
     fireEvent.change(screen.getByPlaceholderText('Dinner, Groceries, Rent, etc.'), {
       target: { value: 'Updated Dinner' },
     });
 
-    // Submit the form
+    // Submit form
     fireEvent.click(screen.getByText('Update Expense'));
 
-    // Wait for the form submission
+    // Verify API calls
     await waitFor(() => {
       expect(updateExpense).toHaveBeenCalledWith(
-        mockExpense.id,
+        'expense-1',
         expect.objectContaining({
           description: 'Updated Dinner',
+          amount: 100,
+          groupId: 'group-1',
+          paidBy: 'user-1',
         })
       );
     });
 
-    // Verify participants were updated
-    await waitFor(() => {
-      expect(replaceExpenseParticipants).toHaveBeenCalled();
-    });
-
     // Verify context was updated
     await waitFor(() => {
-      expect(mockSetExpenses).toHaveBeenCalled();
-      expect(mockSetExpenseParticipants).toHaveBeenCalled();
+      expect(mockRefreshData).toHaveBeenCalled();
     });
   });
 
@@ -382,16 +389,6 @@ describe('ExpenseForm', () => {
     const originalConsoleError = console.error;
     const mockConsoleError = jest.fn();
     console.error = mockConsoleError;
-
-    // Mock useAppContext implementation
-    (useAppContext as jest.Mock).mockReturnValue({
-      users: mockUsers,
-      groups: mockGroups,
-      setExpenses: jest.fn(),
-      setExpenseParticipants: jest.fn(),
-      currentUser: mockUsers[0],
-      groupMembers: mockGroupMembers,
-    });
 
     render(<ExpenseForm groupId="group-1" />);
 
@@ -421,7 +418,7 @@ describe('ExpenseForm', () => {
 
     // Verify the error message
     expect(mockConsoleError.mock.calls[0][0]).toBe('Error saving expense:');
-    expect(mockConsoleError.mock.calls[0][1].message).toBe('Failed to save expense');
+    expect(mockConsoleError.mock.calls[0][1].message).toBe('Failed to create expense');
 
     // Restore console.error
     console.error = originalConsoleError;

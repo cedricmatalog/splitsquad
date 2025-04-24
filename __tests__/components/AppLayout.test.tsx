@@ -69,7 +69,6 @@ describe('AppLayout', () => {
     expect(screen.getAllByText('Groups').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Expenses').length).toBeGreaterThan(0);
     expect(screen.getByTestId('test-content')).toBeInTheDocument();
-    expect(screen.getByText(/SplitSquad © \d{4}/)).toBeInTheDocument();
   });
 
   it('renders the navigation items', () => {

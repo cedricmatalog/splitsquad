@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { TabsContent } from '@/components/ui/tabs';
-import { ExpenseList } from '@/components/expenses/ExpenseList';
+import { ExpenseList } from '@/components/expenses/list';
 import { BalanceOverview } from '@/components/balances/BalanceOverview';
 import { DetailedBalances } from '@/components/balances/DetailedBalances';
 import { SettlementSuggestions } from '@/components/balances/SettlementSuggestions';
