@@ -2,55 +2,15 @@
 
 import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { useAppContext } from '@/context/AppContext';
-import { DollarSign, ArrowUpDown, Trash2, AlertCircle } from 'lucide-react';
-import Link from 'next/link';
-import { cn } from '@/lib/utils';
+import { ArrowUpDown } from 'lucide-react';
 import { deletePayment } from '@/services/payments';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { toast } from '@/components/ui/use-toast';
+import { Spinner } from '@/components/ui/spinner';
 
-// Spinner component
-function Spinner({ className }: { className?: string }) {
-  return (
-    <svg
-      className={cn('animate-spin h-4 w-4', className)}
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-    >
-      <circle
-        className="opacity-25"
-        cx="12"
-        cy="12"
-        r="10"
-        stroke="currentColor"
-        strokeWidth="4"
-      ></circle>
-      <path
-        className="opacity-75"
-        fill="currentColor"
-        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-      ></path>
-    </svg>
-  );
-}
+// Import modular components
+import { PaymentTable, MobilePaymentList, EmptyPaymentState, DeletePaymentDialog } from './';
 
 interface PaymentHistoryProps {
   groupId?: string; // Optional to filter by group
@@ -230,170 +190,41 @@ export function PaymentHistory({ groupId, userId, limit }: PaymentHistoryProps) 
         </CardHeader>
         <CardContent>
           {filteredPayments.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 mb-4">
-                <DollarSign className="h-6 w-6 text-gray-500" />
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-1">No payments recorded yet</h3>
-              <p className="text-sm text-gray-500 mb-4 max-w-md mx-auto">
-                When group members record payments to each other, they will appear here.
-              </p>
-              {groupId && (
-                <Button asChild>
-                  <Link href={`/groups/${groupId}/payments/new`}>Record a Payment</Link>
-                </Button>
-              )}
-            </div>
+            <EmptyPaymentState groupId={groupId} />
           ) : (
             <>
               {/* Desktop view */}
-              <div className="hidden md:block">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Date</TableHead>
-                      <TableHead>From</TableHead>
-                      <TableHead>To</TableHead>
-                      <TableHead className="text-right">Amount</TableHead>
-                      <TableHead>Method</TableHead>
-                      <TableHead>Notes</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredPayments.map(payment => (
-                      <TableRow key={payment.id}>
-                        <TableCell>{formatDate(payment.date)}</TableCell>
-                        <TableCell className="font-medium">
-                          {getUserName(payment.fromUser)}
-                        </TableCell>
-                        <TableCell>{getUserName(payment.toUser)}</TableCell>
-                        <TableCell className="text-right font-medium">
-                          {formatAmount(payment.amount)}
-                        </TableCell>
-                        <TableCell>
-                          {payment.paymentMethod ? (
-                            <span className="capitalize">
-                              {payment.paymentMethod.replace('_', ' ')}
-                            </span>
-                          ) : (
-                            <span className="text-gray-400">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {payment.notes ? (
-                            <span className="text-sm truncate max-w-[200px] block">
-                              {payment.notes}
-                            </span>
-                          ) : (
-                            <span className="text-gray-400">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {canDeletePayment(payment.id) && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDeleteClick(payment.id)}
-                              className="h-8 w-8 text-destructive hover:text-destructive-foreground hover:bg-destructive/10"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              <span className="sr-only">Delete payment</span>
-                            </Button>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+              <PaymentTable
+                payments={filteredPayments}
+                formatDate={formatDate}
+                formatAmount={formatAmount}
+                getUserName={getUserName}
+                canDeletePayment={canDeletePayment}
+                onDeleteClick={handleDeleteClick}
+              />
 
               {/* Mobile view */}
-              <div className="md:hidden space-y-4">
-                {filteredPayments.map(payment => (
-                  <div key={payment.id} className="border rounded-md p-4 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="text-sm text-gray-500">{formatDate(payment.date)}</div>
-                      <div className="font-medium text-right">{formatAmount(payment.amount)}</div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-1 text-sm">
-                      <div className="text-gray-500">From:</div>
-                      <div className="font-medium">{getUserName(payment.fromUser)}</div>
-
-                      <div className="text-gray-500">To:</div>
-                      <div>{getUserName(payment.toUser)}</div>
-
-                      {payment.paymentMethod && (
-                        <>
-                          <div className="text-gray-500">Method:</div>
-                          <div className="capitalize">
-                            {payment.paymentMethod.replace('_', ' ')}
-                          </div>
-                        </>
-                      )}
-                    </div>
-
-                    {payment.notes && (
-                      <div className="pt-1 border-t mt-2">
-                        <div className="text-xs text-gray-500 mb-1">Notes:</div>
-                        <div className="text-sm">{payment.notes}</div>
-                      </div>
-                    )}
-
-                    {canDeletePayment(payment.id) && (
-                      <div className="pt-2 mt-2 border-t flex justify-end">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteClick(payment.id)}
-                          className="text-destructive hover:text-destructive-foreground hover:bg-destructive/10"
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Delete
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+              <MobilePaymentList
+                payments={filteredPayments}
+                formatDate={formatDate}
+                formatAmount={formatAmount}
+                getUserName={getUserName}
+                canDeletePayment={canDeletePayment}
+                onDeleteClick={handleDeleteClick}
+              />
             </>
           )}
         </CardContent>
       </Card>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-destructive" />
-              Confirm Delete Payment
-            </DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete this payment? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowDeleteDialog(false)}
-              disabled={isDeleting}
-            >
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleDeletePayment} disabled={isDeleting}>
-              {isDeleting ? (
-                <>
-                  <Spinner className="mr-2" /> Deleting...
-                </>
-              ) : (
-                'Delete Payment'
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DeletePaymentDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        onConfirm={handleDeletePayment}
+        isDeleting={isDeleting}
+        Spinner={Spinner}
+      />
     </>
   );
 }

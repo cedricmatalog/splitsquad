@@ -4,3 +4,6 @@ export { ExpenseRow } from './ExpenseRow';
 export { ExpenseTableHeader } from './ExpenseTableHeader';
 export { EmptyState } from './EmptyState';
 export { VirtualizedTable } from './VirtualizedTable';
+export { Pagination } from './Pagination';
+export { TableContainer } from './TableContainer';
+export { ExpenseCardHeader } from './ExpenseCardHeader';

@@ -1,7 +1,4 @@
 'use client';
 
-import { ExpenseForm } from './form/ExpenseForm';
-
-// Re-export from modular form
-export { ExpenseForm };
-export default ExpenseForm;
+// Re-export from the new location for backward compatibility
+export { ExpenseForm } from './form';

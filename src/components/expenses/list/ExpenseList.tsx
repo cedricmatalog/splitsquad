@@ -1,14 +1,10 @@
 'use client';
 
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import Link from 'next/link';
 import { Expense } from '@/types';
 import { useAppContext } from '@/context/AppContext';
-import { Button } from '@/components/ui/button';
-import { Table } from '@/components/ui/table';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { format, isAfter, isBefore, startOfDay, endOfDay } from 'date-fns';
-import { PlusCircle, ChevronLeft, ChevronRight, List } from 'lucide-react';
 import { useVirtualList } from '@/hooks/useVirtualList';
 import React from 'react';
 
@@ -18,6 +14,9 @@ import { ExpenseRow } from './ExpenseRow';
 import { EmptyState } from './EmptyState';
 import { ExpenseTableHeader } from './ExpenseTableHeader';
 import { VirtualizedTable } from './VirtualizedTable';
+import { Pagination } from './Pagination';
+import { TableContainer } from './TableContainer';
+import { ExpenseCardHeader } from './ExpenseCardHeader';
 
 interface ExpenseListProps {
   expenses: Expense[];
@@ -158,25 +157,6 @@ export function ExpenseList({
     }
   };
 
-  // Handle page change
-  const handlePageChange = (newPage: number) => {
-    setPage(newPage);
-  };
-
-  // Handle previous page
-  const handlePreviousPage = () => {
-    if (page > 1) {
-      handlePageChange(page - 1);
-    }
-  };
-
-  // Handle next page
-  const handleNextPage = () => {
-    if (page < Math.ceil(filteredExpenses.length / pageSize)) {
-      handlePageChange(page + 1);
-    }
-  };
-
   // Render table row
   const renderTableRow = useCallback(
     (expense: Expense, style?: React.CSSProperties) => (
@@ -203,20 +183,7 @@ export function ExpenseList({
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-xl font-semibold flex items-center gap-2">
-          <List className="h-5 w-5 text-primary" />
-          {groupId ? `Group Expenses` : 'All Expenses'}
-        </CardTitle>
-        {!limit && (
-          <Button asChild size="sm">
-            <Link href={groupId ? `/expenses/new?groupId=${groupId}` : '/expenses/new'}>
-              <PlusCircle className="h-4 w-4 mr-2" />
-              Add Expense
-            </Link>
-          </Button>
-        )}
-      </CardHeader>
+      <ExpenseCardHeader groupId={groupId} showAddButton={!limit} />
       <CardContent>
         {!limit && (
           <ExpenseFilters
@@ -230,55 +197,25 @@ export function ExpenseList({
           />
         )}
 
-        <div className="mt-4 border rounded-md overflow-hidden">
-          <div
-            className="overflow-auto max-h-[500px]"
-            onScroll={handleScroll}
-            style={{ scrollbarWidth: 'thin' }}
-          >
-            <Table>
-              <ExpenseTableHeader showGroupColumn={showGroupColumn} />
-              <VirtualizedTable
-                tableBodyRef={tableBodyRef}
-                displayExpenses={paginatedExpenses}
-                virtualItems={virtualItems}
-                totalHeight={totalHeight}
-                renderTableRow={renderTableRow}
-                emptyStateRow={emptyStateRow}
-              />
-            </Table>
-          </div>
-        </div>
+        <TableContainer onScroll={handleScroll}>
+          <ExpenseTableHeader showGroupColumn={showGroupColumn} />
+          <VirtualizedTable
+            tableBodyRef={tableBodyRef}
+            displayExpenses={paginatedExpenses}
+            virtualItems={virtualItems}
+            totalHeight={totalHeight}
+            renderTableRow={renderTableRow}
+            emptyStateRow={emptyStateRow}
+          />
+        </TableContainer>
 
         {!limit && filteredExpenses.length > pageSize && (
-          <div className="flex items-center justify-between mt-4">
-            <div className="text-sm text-gray-500">
-              Showing {(page - 1) * pageSize + 1} to{' '}
-              {Math.min(page * pageSize, filteredExpenses.length)} of {filteredExpenses.length}{' '}
-              expenses
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handlePreviousPage}
-                disabled={page === 1}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <span className="text-sm">
-                Page {page} of {Math.ceil(filteredExpenses.length / pageSize)}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleNextPage}
-                disabled={page >= Math.ceil(filteredExpenses.length / pageSize)}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+          <Pagination
+            page={page}
+            pageSize={pageSize}
+            totalItems={filteredExpenses.length}
+            onPageChange={setPage}
+          />
         )}
       </CardContent>
     </Card>

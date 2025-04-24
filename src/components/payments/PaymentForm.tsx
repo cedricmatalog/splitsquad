@@ -6,11 +6,19 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import { useAppContext } from '@/context/AppContext';
-import { Payment, User } from '@/types';
-import { PaymentConfirmation } from './PaymentConfirmation';
-import { createPayment } from '@/services/payments';
-import { DollarSign, AlertCircle, User as UserIcon, ArrowRight, Loader2 } from 'lucide-react';
+import { Payment } from '@/types';
+import { AlertCircle, DollarSign, Loader2 } from 'lucide-react';
 import useExpenseCalculations from '@/hooks/useExpenseCalculations';
+import { createPayment } from '@/services/payments';
+
+// Import modular components
+import {
+  PaymentConfirmation,
+  PaymentFormSummary,
+  PaymentFormField,
+  UserSelect,
+  AmountInput,
+} from './';
 
 interface PaymentFormProps {
   groupId: string;
@@ -201,19 +209,19 @@ export function PaymentForm({
 
   // Helper to get user by ID
   const getUserById = useCallback(
-    (userId: string): User | undefined => {
+    (userId: string) => {
       return users.find(user => user.id === userId);
     },
     [users]
   );
 
-  const formatAmount = useCallback((amount: number) => {
+  const formatAmount = useCallback((value: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    }).format(amount);
+    }).format(value);
   }, []);
 
   // If payment was successfully submitted, show confirmation
@@ -242,103 +250,41 @@ export function PaymentForm({
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-4">
             {/* From User Selection */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">From</label>
-              <select
-                className={`w-full px-3 py-2 border rounded-md ${
-                  errors.fromUser ? 'border-red-500' : 'border-gray-300'
-                }`}
-                value={fromUser}
-                onChange={e => setFromUser(e.target.value)}
-              >
-                <option value="">Select who is paying</option>
-                {groupMembers.map(user => (
-                  <option key={user.id} value={user.id}>
-                    {user.name}
-                  </option>
-                ))}
-              </select>
-              {errors.fromUser && (
-                <p className="text-sm text-red-500 flex items-center gap-1">
-                  <AlertCircle className="h-4 w-4" /> {errors.fromUser}
-                </p>
-              )}
-            </div>
+            <PaymentFormField label="From" error={errors.fromUser}>
+              <UserSelect
+                label="From"
+                value={fromUser || ''}
+                onChange={setFromUser}
+                users={groupMembers}
+                error={errors.fromUser}
+                placeholder="Select who is paying"
+              />
+            </PaymentFormField>
 
             {/* To User Selection */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">To</label>
-              <select
-                className={`w-full px-3 py-2 border rounded-md ${
-                  errors.toUser ? 'border-red-500' : 'border-gray-300'
-                }`}
-                value={toUser}
-                onChange={e => setToUser(e.target.value)}
-              >
-                <option value="">Select who is receiving</option>
-                {groupMembers.map(user => (
-                  <option key={user.id} value={user.id}>
-                    {user.name}
-                  </option>
-                ))}
-              </select>
-              {errors.toUser && (
-                <p className="text-sm text-red-500 flex items-center gap-1">
-                  <AlertCircle className="h-4 w-4" /> {errors.toUser}
-                </p>
-              )}
-            </div>
+            <PaymentFormField label="To" error={errors.toUser}>
+              <UserSelect
+                label="To"
+                value={toUser || ''}
+                onChange={setToUser}
+                users={groupMembers}
+                error={errors.toUser}
+                placeholder="Select who is receiving"
+              />
+            </PaymentFormField>
 
             {/* Amount */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Amount</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <DollarSign className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type="number"
-                  placeholder="0.00"
-                  step="0.01"
-                  value={amount === 0 ? '' : amount}
-                  onChange={e => {
-                    const value = e.target.value;
-                    // If empty, set to 0
-                    if (value === '') {
-                      setAmount(0);
-                    } else {
-                      // Otherwise parse as float
-                      setAmount(parseFloat(value));
-                    }
-                  }}
-                  className={`w-full pl-10 px-3 py-2 border rounded-md ${
-                    errors.amount ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                />
-              </div>
-              {errors.amount && (
-                <p className="text-sm text-red-500 flex items-center gap-1">
-                  <AlertCircle className="h-4 w-4" /> {errors.amount}
-                </p>
-              )}
-            </div>
+            <PaymentFormField label="Amount" error={errors.amount}>
+              <AmountInput value={amount} onChange={setAmount} error={errors.amount} />
+            </PaymentFormField>
 
             {/* Date */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Date</label>
-              <div className="relative">
-                <DatePicker value={date} onChange={setDate} placeholder="Select payment date" />
-              </div>
-              {errors.date && (
-                <p className="text-sm text-red-500 flex items-center gap-1">
-                  <AlertCircle className="h-4 w-4" /> {errors.date}
-                </p>
-              )}
-            </div>
+            <PaymentFormField label="Date" error={errors.date}>
+              <DatePicker value={date} onChange={setDate} placeholder="Select payment date" />
+            </PaymentFormField>
 
             {/* Payment Method */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Payment Method</label>
+            <PaymentFormField label="Payment Method">
               <select
                 className="w-full px-3 py-2 border rounded-md border-gray-300"
                 value={selectedPaymentMethod}
@@ -349,42 +295,28 @@ export function PaymentForm({
                 <option value="credit_card">Credit Card</option>
                 <option value="other">Other</option>
               </select>
-            </div>
+            </PaymentFormField>
 
             {/* Notes */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Notes (Optional)</label>
+            <PaymentFormField label="Notes (Optional)">
               <textarea
                 placeholder="Add notes about this payment"
                 value={notes}
                 onChange={e => setNotes(e.target.value)}
                 className="w-full px-3 py-2 border rounded-md border-gray-300 min-h-[80px]"
               />
-            </div>
+            </PaymentFormField>
           </div>
 
           {/* Summary */}
           {fromUser && toUser && amount > 0 && (
-            <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
-              <h4 className="font-medium text-sm mb-2">Payment Summary</h4>
-              <div className="flex items-center justify-center space-x-2">
-                <div className="flex-shrink-0 h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-                  <UserIcon className="h-4 w-4 text-blue-600" />
-                </div>
-                <span className="font-medium">{getUserById(fromUser)?.name}</span>
-                <div className="flex items-center px-2">
-                  <ArrowRight className="h-4 w-4 text-gray-400" />
-                  <span className="mx-2 bg-green-100 text-green-800 font-semibold px-2 py-1 rounded">
-                    {formatAmount(amount)}
-                  </span>
-                  <ArrowRight className="h-4 w-4 text-gray-400" />
-                </div>
-                <div className="flex-shrink-0 h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-                  <UserIcon className="h-4 w-4 text-blue-600" />
-                </div>
-                <span className="font-medium">{getUserById(toUser)?.name}</span>
-              </div>
-            </div>
+            <PaymentFormSummary
+              fromUser={fromUser}
+              toUser={toUser}
+              amount={amount}
+              getUserById={getUserById}
+              formatAmount={formatAmount}
+            />
           )}
 
           {errors.submit && (

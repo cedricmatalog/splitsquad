@@ -20,6 +20,12 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Code Quality Requirements
+
+This project enforces strict code quality standards. All tests must pass and the build must complete without errors before code can be merged.
+
+For detailed information about code quality requirements and verification, see [CODE_QUALITY.md](./CODE_QUALITY.md).
+
 ## Code Quality and Git Hooks
 
 This project uses Husky to enforce code quality standards through Git hooks. These hooks automatically run on specific Git events to ensure code consistency and prevent issues.
