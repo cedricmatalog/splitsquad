@@ -50,7 +50,8 @@ jest.mock('@/context/AppContext', () => ({
 }));
 
 // Mock the DatePicker component
-jest.mock('@/components/ui/date-picker', () => ({
+jest.mock('@/components/ui', () => ({
+  ...jest.requireActual('@/components/ui'),
   DatePicker: ({
     value,
     onChange,

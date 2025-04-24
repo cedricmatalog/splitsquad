@@ -28,7 +28,8 @@ jest.mock('lucide-react', () => ({
 }));
 
 // Mock the DatePicker component to avoid testing issues
-jest.mock('@/components/ui/date-picker', () => ({
+jest.mock('@/components/ui', () => ({
+  ...jest.requireActual('@/components/ui'),
   DatePicker: ({
     value,
     onChange,
