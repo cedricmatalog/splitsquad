@@ -1,7 +1,9 @@
+'use client';
+
 // Adapted from https://ui.shadcn.com/docs/components/toast
 import * as React from 'react';
 
-import type { ToastActionElement, ToastProps } from '@/components/ui';
+import type { ToastActionElement, ToastProps } from './feedback/toast';
 
 const TOAST_LIMIT = 5;
 

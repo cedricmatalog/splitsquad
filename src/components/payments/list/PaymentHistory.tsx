@@ -6,7 +6,7 @@ import { Button } from '@/components/ui';
 import { useAppContext } from '@/context/AppContext';
 import { ArrowUpDown } from 'lucide-react';
 import { deletePayment } from '@/services/payments';
-import { toast } from '@/components/ui';
+import { toast } from '@/components/ui/feedback/use-toast';
 import { Spinner } from '@/components/ui';
 
 // Import modular components
