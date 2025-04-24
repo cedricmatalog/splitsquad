@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { PaymentForm } from '@/components/payments/PaymentForm';
+import { PaymentForm } from '@/components/payments';
 import { User } from '@/types';
 import { createPayment } from '@/services/payments'; // Import the service
 
@@ -120,6 +120,23 @@ const renderPaymentForm = (props = {}) => {
 
   return render(<PaymentForm {...mockPaymentProps} {...props} />);
 };
+
+// Mock Supabase
+jest.mock('@supabase/supabase-js', () => {
+  return {
+    createClient: jest.fn(() => ({
+      from: jest.fn().mockReturnThis(),
+      select: jest.fn().mockReturnThis(),
+      insert: jest.fn().mockReturnThis(),
+      delete: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      single: jest.fn().mockReturnThis(),
+      match: jest.fn().mockReturnThis(),
+      data: null,
+      error: null,
+    })),
+  };
+});
 
 describe('PaymentForm', () => {
   beforeEach(() => {

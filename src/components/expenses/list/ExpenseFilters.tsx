@@ -1,8 +1,8 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { DatePicker } from '@/components/ui/date-picker';
+import { Button } from '@/components/ui';
+import { Input } from '@/components/ui';
+import { DatePicker } from '@/components/ui';
 import { Search, X } from 'lucide-react';
 
 // Sub-component for search and filters

@@ -1,7 +1,7 @@
 // Adapted from https://ui.shadcn.com/docs/components/toast
 import * as React from 'react';
 
-import type { ToastActionElement, ToastProps } from '@/components/ui/toast';
+import type { ToastActionElement, ToastProps } from '@/components/ui';
 
 const TOAST_LIMIT = 5;
 

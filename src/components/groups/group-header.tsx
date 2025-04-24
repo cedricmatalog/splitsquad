@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Spinner } from '@/components/ui/spinner';
+import { Button } from '@/components/ui';
+import { Spinner } from '@/components/ui';
 import { Group } from '@/types';
 
 interface GroupHeaderProps {

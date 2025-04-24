@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAppContext } from '@/context/AppContext';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui';
 import { ExpenseList } from '@/components/expenses/list';
 import { PageHeader } from '@/components/PageHeader';
 import { PlusCircle } from 'lucide-react';

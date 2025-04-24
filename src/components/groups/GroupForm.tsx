@@ -3,9 +3,9 @@
 import { useState } from 'react';
 import { User } from '@/types';
 import Link from 'next/link';
-import { Input } from '@/components/ui/input';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui';
+import { Button } from '@/components/ui';
 import { createGroup } from '@/services/groups';
 
 interface GroupFormProps {

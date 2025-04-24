@@ -1,7 +1,7 @@
 'use client';
 
 import { ReactNode } from 'react';
-import { Table } from '@/components/ui/table';
+import { Table } from '@/components/ui';
 
 interface TableContainerProps {
   children: ReactNode;

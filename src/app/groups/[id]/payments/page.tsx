@@ -2,8 +2,8 @@
 
 import { useParams } from 'next/navigation';
 import { PageHeader } from '@/components/PageHeader';
-import { PaymentHistory } from '@/components/payments/PaymentHistory';
-import { Button } from '@/components/ui/button';
+import { PaymentHistory } from '@/components/payments';
+import { Button } from '@/components/ui';
 import { useAppContext } from '@/context/AppContext';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -43,4 +43,4 @@ export default function PaymentsPage() {
       <PaymentHistory groupId={groupId} />
     </div>
   );
-} 
+}

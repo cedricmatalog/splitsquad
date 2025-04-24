@@ -3,10 +3,10 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/PageHeader';
-import { PaymentHistory } from '@/components/payments/PaymentHistory';
-import { Button } from '@/components/ui/button';
+import { PaymentHistory } from '@/components/payments';
+import { Button } from '@/components/ui';
 import { useAppContext } from '@/context/AppContext';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui';
 import Link from 'next/link';
 import { PlusCircle, DollarSign } from 'lucide-react';
 

@@ -1,16 +1,16 @@
 'use client';
 
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { TabsContent } from '@/components/ui/tabs';
+import { Button } from '@/components/ui';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui';
+import { TabsContent } from '@/components/ui';
 import { ExpenseList } from '@/components/expenses/list';
 import { BalanceOverview } from '@/components/balances/BalanceOverview';
 import { DetailedBalances } from '@/components/balances/DetailedBalances';
 import { SettlementSuggestions } from '@/components/balances/SettlementSuggestions';
-import { PaymentHistory } from '@/components/payments/PaymentHistory';
-import { Spinner } from '@/components/ui/spinner';
+import { PaymentHistory } from '@/components/payments';
+import { Spinner } from '@/components/ui';
 import { User, Expense } from '@/types';
 
 interface GroupTabContentProps {

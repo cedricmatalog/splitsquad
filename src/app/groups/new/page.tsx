@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAppContext } from '@/context/AppContext';
 import { PageHeader } from '@/components/PageHeader';
 import { GroupForm } from '@/components/groups/GroupForm';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui';
 import { createGroupMember } from '@/services/group_members';
 
 export default function NewGroup() {

@@ -1,6 +1,6 @@
 'use client';
 
-import { CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { CardHeader, CardTitle, CardDescription } from '@/components/ui';
 
 interface ExpenseFormHeaderProps {
   isEditing: boolean;

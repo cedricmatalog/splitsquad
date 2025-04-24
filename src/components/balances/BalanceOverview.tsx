@@ -1,12 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui';
+import { Badge } from '@/components/ui';
+import { Button } from '@/components/ui';
 import { useAppContext } from '@/context/AppContext';
 import useExpenseCalculations from '@/hooks/useExpenseCalculations';
-import { PaymentForm } from '@/components/payments/PaymentForm';
+import { PaymentForm } from '@/components/payments';
 
 interface BalanceOverviewProps {
   groupId?: string;

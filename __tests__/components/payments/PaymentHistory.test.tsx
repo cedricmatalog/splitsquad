@@ -1,11 +1,28 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { PaymentHistory } from '@/components/payments/PaymentHistory';
+import { PaymentHistory } from '@/components/payments';
 import { useAppContext } from '@/context/AppContext';
 
 // Mock useAppContext hook
 jest.mock('@/context/AppContext', () => ({
   useAppContext: jest.fn(),
 }));
+
+// Mock Supabase
+jest.mock('@supabase/supabase-js', () => {
+  return {
+    createClient: jest.fn(() => ({
+      from: jest.fn().mockReturnThis(),
+      select: jest.fn().mockReturnThis(),
+      insert: jest.fn().mockReturnThis(),
+      delete: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      single: jest.fn().mockReturnThis(),
+      match: jest.fn().mockReturnThis(),
+      data: null,
+      error: null,
+    })),
+  };
+});
 
 describe('PaymentHistory', () => {
   const mockUsers = [

@@ -1,0 +1,1 @@
+export { DeletePaymentDialog } from './DeletePaymentDialog';

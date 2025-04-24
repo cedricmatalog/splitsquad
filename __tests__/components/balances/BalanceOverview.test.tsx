@@ -14,7 +14,7 @@ jest.mock('@/hooks/useExpenseCalculations', () => ({
 }));
 
 // Mock the PaymentForm component
-jest.mock('@/components/payments/PaymentForm', () => ({
+jest.mock('@/components/payments', () => ({
   PaymentForm: ({
     groupId,
     fromUserId,

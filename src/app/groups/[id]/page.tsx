@@ -3,12 +3,12 @@
 import { useState, useRef, use } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import useExpenseCalculations from '@/hooks/useExpenseCalculations';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui';
 import { createGroupMember, deleteGroupMemberByKeys } from '@/services/group_members';
 import useAuthRedirect from '@/hooks/useAuthRedirect';
 
 // Import extracted components
-import { LoadingState } from '@/components/ui/loading-state';
+import { LoadingState } from '@/components/ui';
 import { GroupNotFound } from '@/components/groups/group-not-found';
 import { GroupHeader } from '@/components/groups/group-header';
 import { GroupInfoCards } from '@/components/groups/group-info-cards';

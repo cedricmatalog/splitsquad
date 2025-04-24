@@ -1,7 +1,7 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui';
+import { Avatar, AvatarFallback } from '@/components/ui';
 import { ArrowRight } from 'lucide-react';
 import useExpenseCalculations from '@/hooks/useExpenseCalculations';
 

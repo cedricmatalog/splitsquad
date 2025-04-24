@@ -1,6 +1,6 @@
 'use client';
 
-import { DatePicker } from '@/components/ui/date-picker';
+import { DatePicker } from '@/components/ui';
 import { AlertCircle } from 'lucide-react';
 
 interface DateSelectFieldProps {

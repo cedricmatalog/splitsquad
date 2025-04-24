@@ -2,9 +2,9 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { DatePicker } from '@/components/ui/date-picker';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui';
+import { Button } from '@/components/ui';
+import { DatePicker } from '@/components/ui';
 import { useAppContext } from '@/context/AppContext';
 import { Payment } from '@/types';
 import { AlertCircle, DollarSign, Loader2 } from 'lucide-react';
@@ -12,13 +12,11 @@ import useExpenseCalculations from '@/hooks/useExpenseCalculations';
 import { createPayment } from '@/services/payments';
 
 // Import modular components
-import {
-  PaymentConfirmation,
-  PaymentFormSummary,
-  PaymentFormField,
-  UserSelect,
-  AmountInput,
-} from './';
+import { PaymentConfirmation } from './PaymentConfirmation';
+import { PaymentFormSummary } from './PaymentFormSummary';
+import { PaymentFormField } from './PaymentFormField';
+import { UserSelect } from './UserSelect';
+import { AmountInput } from './AmountInput';
 
 interface PaymentFormProps {
   groupId: string;

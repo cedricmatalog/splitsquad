@@ -1,6 +1,6 @@
 'use client';
 
-import { Input } from '@/components/ui/input';
+import { Input } from '@/components/ui';
 import { AlertCircle } from 'lucide-react';
 
 interface DescriptionInputProps {

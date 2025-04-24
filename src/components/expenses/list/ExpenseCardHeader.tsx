@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui';
+import { CardHeader, CardTitle } from '@/components/ui';
 import { List, PlusCircle } from 'lucide-react';
 
 interface ExpenseCardHeaderProps {

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Group } from '@/types';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui';
 import {
   Card,
   CardContent,
@@ -10,7 +10,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from '@/components/ui';
 import { Users, Calendar, ArrowRight, PlusCircle } from 'lucide-react';
 
 interface GroupListProps {

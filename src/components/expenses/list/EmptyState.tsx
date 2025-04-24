@@ -1,6 +1,6 @@
 'use client';
 
-import { TableRow, TableCell } from '@/components/ui/table';
+import { TableRow, TableCell } from '@/components/ui';
 import { Calendar } from 'lucide-react';
 
 // Sub-component for empty state

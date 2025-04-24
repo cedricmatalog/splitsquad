@@ -1,7 +1,7 @@
 'use client';
 
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui';
+import { Button } from '@/components/ui';
 import { CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useAppContext } from '@/context/AppContext';

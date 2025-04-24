@@ -1,16 +1,19 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui';
+import { Button } from '@/components/ui';
 import { useAppContext } from '@/context/AppContext';
 import { ArrowUpDown } from 'lucide-react';
 import { deletePayment } from '@/services/payments';
-import { toast } from '@/components/ui/use-toast';
-import { Spinner } from '@/components/ui/spinner';
+import { toast } from '@/components/ui';
+import { Spinner } from '@/components/ui';
 
 // Import modular components
-import { PaymentTable, MobilePaymentList, EmptyPaymentState, DeletePaymentDialog } from './';
+import { PaymentTable } from './PaymentTable';
+import { MobilePaymentList } from './MobilePaymentList';
+import { EmptyPaymentState } from './EmptyPaymentState';
+import { DeletePaymentDialog } from '../dialogs/DeletePaymentDialog';
 
 interface PaymentHistoryProps {
   groupId?: string; // Optional to filter by group

@@ -3,7 +3,7 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { Expense } from '@/types';
 import { useAppContext } from '@/context/AppContext';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui';
 import { format, isAfter, isBefore, startOfDay, endOfDay } from 'date-fns';
 import { useVirtualList } from '@/hooks/useVirtualList';
 import React from 'react';

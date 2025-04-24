@@ -1,6 +1,6 @@
 'use client';
 
-import { TableBody } from '@/components/ui/table';
+import { TableBody } from '@/components/ui';
 import React, { ReactNode } from 'react';
 import { Expense } from '@/types';
 

@@ -3,7 +3,7 @@
 import { useCallback, useMemo } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import useExpenseCalculations from '@/hooks/useExpenseCalculations';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
 import { ArrowUpRight, ArrowDownRight, DollarSign } from 'lucide-react';
 import React from 'react';
 

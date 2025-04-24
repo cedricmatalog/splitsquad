@@ -2,7 +2,7 @@
 
 import { useParams } from 'next/navigation';
 import { PageHeader } from '@/components/PageHeader';
-import { PaymentForm } from '@/components/payments/PaymentForm';
+import { PaymentForm } from '@/components/payments';
 import { BalanceOverview } from '@/components/balances/BalanceOverview';
 import { useAppContext } from '@/context/AppContext';
 import { useEffect } from 'react';

@@ -1,6 +1,6 @@
 'use client';
 
-import { TableHeader, TableRow, TableHead } from '@/components/ui/table';
+import { TableHeader, TableRow, TableHead } from '@/components/ui';
 
 // Sub-component for table header
 interface ExpenseTableHeaderProps {

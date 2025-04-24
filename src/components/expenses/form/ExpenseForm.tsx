@@ -1,7 +1,7 @@
 'use client';
 
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui';
+import { Button } from '@/components/ui';
 import { Expense, ExpenseParticipant } from '@/types';
 import { ExpenseFormHeader } from './ExpenseFormHeader';
 import { ExpenseFormShares } from './ExpenseFormShares';

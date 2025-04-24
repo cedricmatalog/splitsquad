@@ -1,9 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { TableRow, TableCell } from '@/components/ui/table';
+import { Button } from '@/components/ui';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui';
+import { TableRow, TableCell } from '@/components/ui';
 import { Eye } from 'lucide-react';
 import { Expense } from '@/types';
 
