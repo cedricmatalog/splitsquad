@@ -1,0 +1,20 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Service Layer
+
+The application uses a service layer pattern to interact with the Supabase backend:
+
+## Key Services
+- [src/services/auth.ts](mdc:src/services/auth.ts) - Authentication and user management
+- [src/services/groups.ts](mdc:src/services/groups.ts) - Group creation and management
+- [src/services/expenses.ts](mdc:src/services/expenses.ts) - Expense tracking functions
+- [src/services/expense_participants.ts](mdc:src/services/expense_participants.ts) - Managing expense splits
+- [src/services/payments.ts](mdc:src/services/payments.ts) - Payment and settlement functions
+- [src/services/users.ts](mdc:src/services/users.ts) - User profile operations
+- [src/services/group_members.ts](mdc:src/services/group_members.ts) - Group membership functions
+
+## Database Connection
+Database connection is managed through [src/lib/supabase.ts](mdc:src/lib/supabase.ts)

@@ -1,0 +1,21 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Code Organization
+
+## Directory Structure
+- [src/app](mdc:src/app) - Next.js app router pages and layouts
+- [src/components](mdc:src/components) - Reusable React components
+- [src/hooks](mdc:src/hooks) - Custom React hooks
+- [src/context](mdc:src/context) - React context providers
+- [src/services](mdc:src/services) - API services for data fetching
+- [src/lib](mdc:src/lib) - Utility functions and common libraries
+- [src/types](mdc:src/types) - TypeScript type definitions
+- [src/data](mdc:src/data) - Mock data and constants
+
+## Component Structure
+- UI components are built using Shadcn UI
+- Feature components are organized by domain (expenses, groups, payments)
+- Layout components handle page structure

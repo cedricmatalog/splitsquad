@@ -1,0 +1,20 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Routing Structure
+
+SplitSquad uses Next.js App Router for page routing:
+
+## Main Routes
+- `/` - Landing page [src/app/page.tsx](mdc:src/app/page.tsx)
+- `/login` - User login [src/app/login/page.tsx](mdc:src/app/login/page.tsx)
+- `/signup` - User registration [src/app/signup/page.tsx](mdc:src/app/signup/page.tsx)
+- `/dashboard` - User dashboard [src/app/dashboard/page.tsx](mdc:src/app/dashboard/page.tsx)
+- `/groups/[id]` - Group details [src/app/groups/[id]/page.tsx](mdc:src/app/groups/[id]/page.tsx)
+- `/expenses/[id]` - Expense details [src/app/expenses/[id]/page.tsx](mdc:src/app/expenses/[id]/page.tsx)
+- `/payments` - Payments history [src/app/payments/page.tsx](mdc:src/app/payments/page.tsx)
+
+## Navigation
+Main application navigation is handled through the AppLayout component [src/components/AppLayout.tsx](mdc:src/components/AppLayout.tsx)

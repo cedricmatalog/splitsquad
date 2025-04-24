@@ -1,0 +1,28 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Development Workflow
+
+## Setup and Running
+- Install dependencies with `npm install`
+- Run development server with `npm run dev`
+- Build for production with `npm run build`
+- Start production server with `npm run start`
+
+## Quality Checks
+- Run linting with `npm run lint`
+- Run TypeScript checks with `npm run typecheck`
+- Run tests with `npm run test`
+- Run all checks with `npm run check-all`
+
+## Git Workflow
+- The project uses conventional commits
+- Git hooks are set up with Husky for:
+  - Pre-commit linting and testing
+  - Commit message validation
+- See [GIT_HOOKS.md](mdc:GIT_HOOKS.md) for more details
+
+## Database
+- Seeding and migration scripts are available in [scripts](mdc:scripts) directory

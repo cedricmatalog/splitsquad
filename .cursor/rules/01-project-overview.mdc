@@ -1,0 +1,21 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# SplitSquad Project Overview
+
+SplitSquad is a web application for splitting expenses and managing shared payments among groups of people. It allows users to create groups, add expenses, track who paid what, and calculate balances.
+
+## Tech Stack
+- Next.js 15 with React 19
+- TypeScript
+- Supabase for backend database and authentication
+- Tailwind CSS for styling
+- Shadcn UI components
+
+## Key Files and Directories
+- [src/app/page.tsx](mdc:src/app/page.tsx) - Main landing page
+- [src/app/layout.tsx](mdc:src/app/layout.tsx) - Root layout component
+- [simplified_schema.sql](mdc:simplified_schema.sql) - Database schema
+

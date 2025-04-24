@@ -1,0 +1,25 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Database Schema
+
+SplitSquad uses Supabase as its database with the following key tables:
+
+## Core Tables
+- `users` - User profiles and authentication
+- `groups` - Expense groups (e.g., trip, household)
+- `group_members` - Many-to-many relationship between users and groups
+- `expenses` - Individual expenses recorded in a group
+- `expense_participants` - Who owes what for each expense
+- `payments` - Settlements between users in a group
+
+## Relations
+- Each group has multiple members (users)
+- Expenses belong to a group and are paid by a user
+- Expense participants track how much each user owes for an expense
+- Payments track money transfers between users within a group
+
+## Schema File
+The complete database schema is defined in [simplified_schema.sql](mdc:simplified_schema.sql)
