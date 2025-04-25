@@ -1,14 +1,30 @@
 import { createClient } from '@supabase/supabase-js';
 import { Database } from '@/types/supabase';
 
-// These values should be in .env.local
-// Provide reasonable defaults to avoid complete breakage when not set
+/**
+ * Configuration values for the Supabase client
+ * These should be set in environment variables (.env.local)
+ * Fallback values are provided for development to avoid complete breakage
+ */
 const supabaseUrl =
   process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://gcrxzivriujieyppigyp.supabase.co';
 const supabaseAnonKey =
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key-for-development';
 
-// Create the Supabase client with proper headers and configuration
+/**
+ * Initialized Supabase client with typed database schema
+ * Configured with authentication, headers, and schema settings
+ *
+ * @example
+ * // Fetch data from a table
+ * const { data, error } = await supabase.from('users').select('*');
+ *
+ * // Authenticate a user
+ * const { data, error } = await supabase.auth.signInWithPassword({
+ *   email: 'user@example.com',
+ *   password: 'password'
+ * });
+ */
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
@@ -33,10 +49,33 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   },
 });
 
-// Type definitions for Supabase query objects
+/**
+ * Type definition for the result of Supabase queries
+ * Standardizes the shape of data returned from query operations
+ *
+ * @template T - The type of data expected from the query
+ */
 type QueryResult<T> = { data: T | null; error: unknown };
 
-// This version of safeQuery handles different types of Supabase queries
+/**
+ * Safely executes a Supabase query with error handling
+ * Works with different types of Supabase query objects
+ *
+ * @template T - The type of data expected from the query
+ * @param {unknown} query - The Supabase query to execute
+ * @returns {Promise<QueryResult<T>>} Object containing data or error
+ *
+ * @example
+ * // Use with a regular Supabase query
+ * const result = await safeQuery(supabase.from('users').select('*'));
+ *
+ * // Handle the result
+ * if (result.error) {
+ *   console.error('Error:', result.error);
+ * } else {
+ *   console.log('Data:', result.data);
+ * }
+ */
 export async function safeQuery<T = unknown>(query: unknown): Promise<QueryResult<T>> {
   try {
     // For PostgrestBuilder objects with execute method
@@ -63,7 +102,12 @@ export async function safeQuery<T = unknown>(query: unknown): Promise<QueryResul
   }
 }
 
-// Utility to check if Supabase is properly configured
+/**
+ * Checks if Supabase is properly configured with valid credentials
+ * Used to determine if the application should use real backend or fall back to demo mode
+ *
+ * @returns {boolean} True if Supabase is properly configured with valid credentials
+ */
 export const isSupabaseConfigured = () => {
   return (
     process.env.NEXT_PUBLIC_SUPABASE_URL &&

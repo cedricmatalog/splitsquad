@@ -1,0 +1,80 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Component Mocking Guide for Tests
+
+This guide covers best practices for mocking React components in tests with proper TypeScript types.
+
+## Mock Function Pattern
+
+When mocking React components or hooks, always use properly typed functions:
+
+```typescript
+// GOOD - Use proper typing with React.ReactNode
+jest.mock('@/components/ui/display', () => ({
+  Avatar: (props: { children: React.ReactNode }) => (
+    <div data-testid="avatar">{props.children}</div>
+  ),
+  // More components...
+}));
+
+// BAD - Avoid 'any' type
+jest.mock('@/components/ui/display', () => ({
+  Avatar: (props: any) => <div data-testid="avatar">{props.children}</div>,
+}));
+```
+
+## Example: Button Component Mock
+
+For UI components with multiple props, define an interface that matches the real component:
+
+```typescript
+jest.mock('@/components/ui/forms', () => ({
+  Button: (props: { 
+    asChild?: boolean; 
+    children: React.ReactNode;
+    variant?: string;
+    size?: string;
+    className?: string;
+    onClick?: () => void;
+  }) => {
+    // Implementation...
+  }
+}));
+```
+
+## Example: Input Component Mock
+
+For form inputs, use React's built-in types:
+
+```typescript
+Input: (props: React.InputHTMLAttributes<HTMLInputElement>) => (
+  <input
+    data-testid="input"
+    {...props}
+  />
+)
+```
+
+## Mocking Next.js Components
+
+When mocking Next.js specific components:
+
+```typescript
+// Mock Link component
+jest.mock('next/link', () => 
+  function Link({ href, children, ...props }: { 
+    href: string; 
+    children: React.ReactNode;
+    [key: string]: any;
+  }) {
+    return <a href={href} {...props}>{children}</a>;
+  }
+);
+```
+
+## Testing Pattern Reference
+
+See [ExpenseList.test.tsx](mdc:__tests__/components/expenses/ExpenseList.test.tsx) for examples of properly typed mocks.

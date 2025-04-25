@@ -1,0 +1,53 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# TypeScript and Linting Standards
+
+This project enforces strict TypeScript and linting standards to maintain code quality. This guide outlines the key requirements and how to work with them.
+
+## TypeScript Standards
+
+- Avoid using `any` types - always define proper interfaces or type aliases
+- Use ReactNode type for components' children props
+- Use proper React event types (e.g., `React.MouseEvent`)
+- Ensure all functions have return types specified
+- Use React's built-in types for HTML attributes
+
+## ESLint Configuration
+
+The project's ESLint configuration is tailored for Next.js TypeScript projects and enforces:
+
+- No unused variables or imports
+- No explicit `any` types
+- Proper JSX/TSX formatting
+- Consistent import ordering
+- React hooks usage rules
+
+## Testing-Specific Standards
+
+When writing tests:
+
+- Mock components and dependencies properly with correct typings
+- Use `screen` and `render` from Testing Library with proper types
+- For component mocks that take props, define proper interfaces instead of using `any`
+
+## Fixing Common Issues
+
+Common TypeScript/linting issues and how to fix them:
+
+1. Unused imports: Remove them or use them
+2. Missing return types: Add explicit return types to functions
+3. Implicit any: Replace with proper type definitions
+4. Nested JSX errors: Ensure proper component hierarchy (e.g., no nested `<a>` tags)
+
+## Pre-Presentation Type Checking
+
+The [scripts/cursor-pre-present.js](mdc:scripts/cursor-pre-present.js) script runs type checking on files before presentation to catch these issues early.
+
+## Related Files
+
+- [package.json](mdc:package.json): Contains linting and type checking scripts
+- [.eslintrc.js](mdc:.eslintrc.js): ESLint configuration
+- [tsconfig.json](mdc:tsconfig.json): TypeScript configuration

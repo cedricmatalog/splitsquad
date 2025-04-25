@@ -4,6 +4,12 @@ import { createContext, useContext, ReactNode, useState, useCallback, useEffect 
 import { User } from '@/types';
 import { signIn, signOut, getCurrentUser } from '@/services/auth';
 
+/**
+ * Authentication context properties interface
+ * Defines all authentication-related functionality available throughout the app
+ *
+ * @interface AuthContextType
+ */
 interface AuthContextType {
   currentUser: User | null;
   setCurrentUser: (user: User | null) => void;
@@ -14,14 +20,30 @@ interface AuthContextType {
   lastError: string | null;
 }
 
+// Create the context with undefined default value
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+/**
+ * Authentication Provider component
+ * Manages authentication state and provides login/logout functionality
+ *
+ * @param {Object} props - Component props
+ * @param {ReactNode} props.children - Child components that will have access to the auth context
+ * @returns {JSX.Element} Auth provider component
+ */
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [lastError, setLastError] = useState<string | null>(null);
 
-  // Login function using Supabase
+  /**
+   * Authenticates a user with email and password
+   * Updates context state and localStorage on success
+   *
+   * @param {string} email - User's email
+   * @param {string} password - User's password
+   * @returns {Promise<User | null>} Authenticated user or null if login fails
+   */
   const login = useCallback(async (email: string, password: string): Promise<User | null> => {
     try {
       const user = await signIn(email, password);
@@ -46,7 +68,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Logout function using Supabase
+  /**
+   * Signs out the current user
+   * Clears auth state and localStorage
+   *
+   * @returns {Promise<void>}
+   */
   const logout = useCallback(async () => {
     try {
       console.log('Logging out user');
@@ -67,7 +94,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Load current user from Supabase on mount
+  /**
+   * Effect hook to load the current user on component mount
+   * Tries localStorage first for quick UI display, then verifies with server
+   */
   useEffect(() => {
     async function loadUser() {
       try {
@@ -151,6 +181,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
+/**
+ * Custom hook for accessing the auth context
+ *
+ * @returns {AuthContextType} The auth context value
+ * @throws {Error} If used outside of AuthProvider
+ *
+ * @example
+ * const { currentUser, login, logout } = useAuth();
+ *
+ * // Check if user is logged in
+ * if (currentUser) {
+ *   // User is logged in
+ * }
+ *
+ * // Login a user
+ * await login('user@example.com', 'password');
+ *
+ * // Logout the current user
+ * await logout();
+ */
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {

@@ -10,6 +10,12 @@ import { getExpenseParticipants } from '@/services/expense_participants';
 import { getPayments } from '@/services/payments';
 import { useAuth } from './AuthContext';
 
+/**
+ * Data context properties interface
+ * Provides access to all application data entities and operations
+ *
+ * @interface DataContextType
+ */
 interface DataContextType {
   users: User[];
   groups: Group[];
@@ -32,8 +38,18 @@ interface DataContextType {
   lastError: string | null;
 }
 
+// Create the context with undefined default value
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
+/**
+ * Data Provider component
+ * Manages all application data, fetches from API, and provides data management functions
+ * Depends on AuthProvider to have access to current user information
+ *
+ * @param {Object} props - Component props
+ * @param {ReactNode} props.children - Child components that will have access to the data context
+ * @returns {JSX.Element} Data provider component
+ */
 export function DataProvider({ children }: { children: ReactNode }) {
   // State for all entities
   const [users, setUsers] = useState<User[]>([]);
@@ -48,7 +64,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // Get auth context
   const { currentUser } = useAuth();
 
-  // Add a retry mechanism for API calls
+  /**
+   * Utility function to retry failed API calls
+   * Implements exponential backoff for better resilience
+   *
+   * @template T - The return type of the API function
+   * @param {function} fn - The API function to call
+   * @param {number} retries - Number of retry attempts
+   * @param {number} delay - Initial delay in milliseconds
+   * @returns {Promise<T>} The result of the API call
+   * @throws {Error} If all retries fail
+   */
   const withRetry = useCallback(
     async <T,>(fn: () => Promise<T>, retries = 3, delay = 1000): Promise<T> => {
       try {
@@ -63,7 +89,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
     []
   );
 
-  // Add debugging to the refreshData function
+  /**
+   * Fetches fresh data from all services
+   * Only runs when a user is authenticated
+   * Clears data when no user is logged in
+   *
+   * @returns {Promise<void>}
+   */
   const refreshData = useCallback(async () => {
     try {
       // Only fetch data if user is authenticated
@@ -127,7 +159,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   }, [currentUser, withRetry]);
 
-  // Refresh data when auth state changes
+  /**
+   * Effect to refresh data when auth state changes
+   * Ensures data is loaded whenever a user logs in
+   */
   useEffect(() => {
     if (currentUser) {
       refreshData();
@@ -155,6 +190,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 }
 
+/**
+ * Custom hook for accessing the data context
+ * Provides access to all application data and data management functions
+ *
+ * @returns {DataContextType} The data context value
+ * @throws {Error} If used outside of DataProvider
+ */
 export function useData() {
   const context = useContext(DataContext);
   if (context === undefined) {
@@ -163,22 +205,43 @@ export function useData() {
   return context;
 }
 
-// Specialized hooks for specific data types
+/**
+ * Specialized hook for working with user data
+ *
+ * @returns {Object} Object containing users array and setter function
+ */
 export function useUserData() {
   const { users, setUsers } = useData();
   return { users, setUsers };
 }
 
+/**
+ * Specialized hook for working with group data
+ * Provides groups and related group membership data
+ *
+ * @returns {Object} Object containing groups, groupMembers and their setter functions
+ */
 export function useGroupData() {
   const { groups, setGroups, groupMembers, setGroupMembers } = useData();
   return { groups, setGroups, groupMembers, setGroupMembers };
 }
 
+/**
+ * Specialized hook for working with expense data
+ * Provides expenses and related expense participant data
+ *
+ * @returns {Object} Object containing expenses, expenseParticipants and their setter functions
+ */
 export function useExpenseData() {
   const { expenses, setExpenses, expenseParticipants, setExpenseParticipants } = useData();
   return { expenses, setExpenses, expenseParticipants, setExpenseParticipants };
 }
 
+/**
+ * Specialized hook for working with payment data
+ *
+ * @returns {Object} Object containing payments array and setter function
+ */
 export function usePaymentData() {
   const { payments, setPayments } = useData();
   return { payments, setPayments };

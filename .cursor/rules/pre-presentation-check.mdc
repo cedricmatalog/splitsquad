@@ -1,0 +1,48 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Pre-Presentation Code Quality Checks
+
+This project has automatic code quality checks that run before code is presented. These checks help ensure that all code meets the project's quality standards before being shared with clients or team members.
+
+## Pre-Presentation Check Configuration
+
+The pre-presentation check is configured in [.cursor/config.json](mdc:.cursor/config.json), which integrates with Cursor's presentation feature.
+
+## How It Works
+
+When you present code with Cursor, the [scripts/cursor-pre-present.js](mdc:scripts/cursor-pre-present.js) script runs automatically to verify:
+
+1. ESLint passes on the file being presented
+2. TypeScript type checking passes (for .ts and .tsx files)
+
+## Running Checks Manually
+
+You can run the checks manually:
+
+- For a specific file: `node scripts/cursor-pre-present.js path/to/file.tsx`
+- For the entire project: `npm run pre-present`
+
+## Git Hook Integration
+
+The project also includes a Husky Git hook [.husky/pre-present](mdc:.husky/pre-present) that can be used to trigger the checks as needed.
+
+## Requirements for Presentation
+
+Before presenting code, ensure:
+
+1. No ESLint errors or warnings
+2. No TypeScript errors
+3. Code follows project conventions and standards
+
+## Package.json Scripts
+
+The required scripts are defined in [package.json](mdc:package.json) under:
+- `lint:check`: Runs ESLint without auto-fixing
+- `pre-present`: Runs both linting and type checking
+
+## Documentation
+
+Full documentation on the pre-presentation check is available in the [README.md](mdc:README.md) in the "Cursor Pre-Presentation Check" section.

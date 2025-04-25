@@ -4,17 +4,35 @@ import { useAppContext } from '@/context/AppContext';
 import { Expense, ExpenseParticipant, Payment, User } from '@/types';
 import { useCallback, useEffect, useRef } from 'react';
 
+/**
+ * Represents a user's balance within a group
+ * @typedef {Object} UserBalance
+ * @property {string} userId - The ID of the user
+ * @property {string} userName - The name of the user
+ * @property {number} amount - The balance amount (positive if user is owed money, negative if user owes money)
+ */
 interface UserBalance {
   userId: string;
   userName: string;
   amount: number;
 }
 
+/**
+ * Represents all balances within a group
+ * @typedef {Object} GroupBalance
+ * @property {string} groupId - The ID of the group
+ * @property {UserBalance[]} balances - Array of user balances in this group
+ */
 interface GroupBalance {
   groupId: string;
   balances: UserBalance[];
 }
 
+/**
+ * Hook for expense and payment calculation logic
+ * Provides functions to calculate balances between users in groups
+ * @returns {Object} Collection of calculation functions for expenses and payments
+ */
 export default function useExpenseCalculations() {
   const { users, groups, expenses, groupMembers, expenseParticipants, payments, currentUser } =
     useAppContext();
@@ -35,7 +53,11 @@ export default function useExpenseCalculations() {
     balanceCache.current = {};
   }, [expenses, groupMembers, expenseParticipants, payments]);
 
-  // Get all expenses for a specific group
+  /**
+   * Gets all expenses for a specific group
+   * @param {string} groupId - The ID of the group
+   * @returns {Expense[]} Array of expenses belonging to the specified group
+   */
   const getGroupExpenses = useCallback(
     (groupId: string): Expense[] => {
       return expenses.filter(expense => expense.groupId === groupId);
@@ -43,7 +65,11 @@ export default function useExpenseCalculations() {
     [expenses]
   );
 
-  // Get all members of a specific group
+  /**
+   * Gets all members of a specific group
+   * @param {string} groupId - The ID of the group
+   * @returns {User[]} Array of users who are members of the specified group
+   */
   const getGroupMembers = useCallback(
     (groupId: string): User[] => {
       const memberIds = groupMembers
@@ -55,7 +81,11 @@ export default function useExpenseCalculations() {
     [groupMembers, users]
   );
 
-  // Get all expense participants for a specific expense
+  /**
+   * Gets all participants for a specific expense
+   * @param {string} expenseId - The ID of the expense
+   * @returns {ExpenseParticipant[]} Array of participants involved in the specified expense
+   */
   const getExpenseParticipants = useCallback(
     (expenseId: string): ExpenseParticipant[] => {
       return expenseParticipants.filter(participant => participant.expenseId === expenseId);
@@ -63,7 +93,11 @@ export default function useExpenseCalculations() {
     [expenseParticipants]
   );
 
-  // Get all payments for a specific group
+  /**
+   * Gets all payments for a specific group
+   * @param {string} groupId - The ID of the group
+   * @returns {Payment[]} Array of payments belonging to the specified group
+   */
   const getGroupPayments = useCallback(
     (groupId: string): Payment[] => {
       return payments.filter(payment => payment.groupId === groupId);
@@ -71,7 +105,12 @@ export default function useExpenseCalculations() {
     [payments]
   );
 
-  // Calculate balances for all users in a group
+  /**
+   * Calculates balance for all users in a group
+   * Leverages caching to improve performance
+   * @param {string} groupId - The ID of the group to calculate balances for
+   * @returns {UserBalance[]} Array of balances for each user in the group
+   */
   const calculateGroupBalances = useCallback(
     (groupId: string): UserBalance[] => {
       // Check cache first - use cached value if less than 2 seconds old
@@ -142,7 +181,11 @@ export default function useExpenseCalculations() {
     [getGroupMembers, getGroupExpenses, getExpenseParticipants, getGroupPayments]
   );
 
-  // Calculate total owed to a specific user across all groups
+  /**
+   * Calculates the total amount owed to a specific user across all groups
+   * @param {string} userId - The ID of the user
+   * @returns {number} Total amount owed to the user (positive balance across all groups)
+   */
   const calculateTotalOwedToUser = useCallback(
     (userId: string): number => {
       let totalOwed = 0;
@@ -165,7 +208,11 @@ export default function useExpenseCalculations() {
     [groupMembers, calculateGroupBalances]
   );
 
-  // Calculate total a user owes to others across all groups
+  /**
+   * Calculates the total amount a user owes to others across all groups
+   * @param {string} userId - The ID of the user
+   * @returns {number} Total amount the user owes (absolute value of negative balances across all groups)
+   */
   const calculateTotalUserOwes = useCallback(
     (userId: string): number => {
       let totalOwes = 0;
@@ -188,7 +235,10 @@ export default function useExpenseCalculations() {
     [groupMembers, calculateGroupBalances]
   );
 
-  // Calculate all group balances
+  /**
+   * Calculates balances for all groups
+   * @returns {GroupBalance[]} Array of group balances for all groups
+   */
   const calculateAllGroupBalances = useCallback((): GroupBalance[] => {
     return groups.map(group => ({
       groupId: group.id,
@@ -196,7 +246,10 @@ export default function useExpenseCalculations() {
     }));
   }, [groups, calculateGroupBalances]);
 
-  // Calculate user total balance with caching
+  /**
+   * Calculates the current user's total balance across all groups with caching
+   * @returns {number} The total balance for the current user (positive if owed money, negative if owes money)
+   */
   const calculateUserTotalBalance = useCallback((): number => {
     if (!currentUser) return 0;
 
@@ -230,7 +283,13 @@ export default function useExpenseCalculations() {
     return result;
   }, [currentUser, groups, calculateGroupBalances]);
 
-  // Calculate simplified payments to settle debts
+  /**
+   * Calculates optimized payment suggestions to settle debts in a group
+   * Uses a greedy algorithm to minimize the number of transactions needed
+   *
+   * @param {string} groupId - The ID of the group to calculate payments for
+   * @returns {Array<Object>} Array of suggested payments, each with from/to users and amount
+   */
   const calculateSimplifiedPayments = useCallback(
     (groupId: string) => {
       const balances = calculateGroupBalances(groupId);
@@ -250,6 +309,7 @@ export default function useExpenseCalculations() {
       let i = 0; // creditor index
       let j = 0; // debtor index
 
+      // Match debtors with creditors to settle all debts with minimal transactions
       while (i < creditors.length && j < debtors.length) {
         const creditor = creditors[i];
         const debtor = debtors[j];
@@ -268,9 +328,11 @@ export default function useExpenseCalculations() {
           });
         }
 
+        // Reduce the remaining balances
         creditor.amount -= amount;
         debtor.amount += amount;
 
+        // Move to next creditor/debtor if their balance is settled (with small epsilon for floating point)
         if (Math.abs(creditor.amount) < 0.01) i++;
         if (Math.abs(debtor.amount) < 0.01) j++;
       }

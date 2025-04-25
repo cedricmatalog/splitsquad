@@ -1,7 +1,19 @@
 import { supabase } from '@/lib/supabase';
 import { Expense } from '@/types';
 
-// Get all expenses
+/**
+ * Retrieves all expenses from the database with optional filtering
+ *
+ * @param {Partial<Expense>} [filter] - Optional filter criteria for expenses
+ * @returns {Promise<Expense[]>} Array of expense objects matching the filter
+ *
+ * @example
+ * // Get all expenses
+ * const allExpenses = await getExpenses();
+ *
+ * // Get expenses for a specific group
+ * const groupExpenses = await getExpenses({ groupId: 'group-123' });
+ */
 export async function getExpenses(filter?: Partial<Expense>): Promise<Expense[]> {
   try {
     let query = supabase.from('expenses').select('*');
@@ -27,7 +39,12 @@ export async function getExpenses(filter?: Partial<Expense>): Promise<Expense[]>
   }
 }
 
-// Get a single expense by ID
+/**
+ * Retrieves a single expense by its ID
+ *
+ * @param {string} id - The ID of the expense to retrieve
+ * @returns {Promise<Expense | null>} The expense object if found, null otherwise
+ */
 export async function getExpenseById(id: string): Promise<Expense | null> {
   try {
     const { data, error } = await supabase.from('expenses').select('*').eq('id', id).single();
@@ -42,7 +59,12 @@ export async function getExpenseById(id: string): Promise<Expense | null> {
   }
 }
 
-// Create a new expense
+/**
+ * Creates a new expense in the database
+ *
+ * @param {Omit<Expense, 'id'>} expense - The expense data to create (without ID)
+ * @returns {Promise<Expense | null>} The created expense with its ID if successful, null on error
+ */
 export async function createExpense(expense: Omit<Expense, 'id'>): Promise<Expense | null> {
   try {
     const { data, error } = await supabase
@@ -60,7 +82,13 @@ export async function createExpense(expense: Omit<Expense, 'id'>): Promise<Expen
   }
 }
 
-// Update an existing expense
+/**
+ * Updates an existing expense in the database
+ *
+ * @param {string} id - The ID of the expense to update
+ * @param {Partial<Expense>} expense - The expense fields to update
+ * @returns {Promise<Expense | null>} The updated expense if successful, null on error
+ */
 export async function updateExpense(
   id: string,
   expense: Partial<Expense>
@@ -90,7 +118,12 @@ export async function updateExpense(
   }
 }
 
-// Delete a expense
+/**
+ * Deletes an expense from the database
+ *
+ * @param {string} id - The ID of the expense to delete
+ * @returns {Promise<boolean>} True if deletion was successful, false otherwise
+ */
 export async function deleteExpense(id: string): Promise<boolean> {
   try {
     const { error } = await supabase.from('expenses').delete().eq('id', id);
@@ -104,7 +137,13 @@ export async function deleteExpense(id: string): Promise<boolean> {
   }
 }
 
-// Helper function to convert database format to app format
+/**
+ * Converts an expense from database format to application format
+ * Handles field name transformations and data type conversions
+ *
+ * @param {unknown} dbItem - The raw database record
+ * @returns {Expense} The formatted expense object for application use
+ */
 function convertFromExpenseDB(dbItem: unknown): Expense {
   const item = dbItem as Record<string, unknown>;
   return {
@@ -117,7 +156,13 @@ function convertFromExpenseDB(dbItem: unknown): Expense {
   };
 }
 
-// Helper function to convert app format to database format
+/**
+ * Converts an expense from application format to database format
+ * Handles field name transformations and adds timestamps
+ *
+ * @param {Partial<Expense>} appItem - The application expense object
+ * @returns {Record<string, unknown>} The formatted database record for storing
+ */
 function convertToExpenseDB(appItem: Partial<Expense>): Record<string, unknown> {
   const { groupId, paidBy, ...rest } = appItem;
   return {

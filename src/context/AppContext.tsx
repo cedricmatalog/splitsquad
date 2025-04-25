@@ -4,14 +4,24 @@ import { createContext, ReactNode, useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './AuthContext';
 import { DataProvider, useData } from './DataContext';
 
-// Create a combined type that includes all context values
-// Use Record<string, unknown> instead of empty interface
+/**
+ * Combined type for the AppContext
+ * This is a placeholder for any app-level context values that might be needed in the future
+ */
 type AppContextType = Record<string, unknown>;
 
 // We're not using this context directly, but keeping it for future use
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+/**
+ * Main application provider component
+ * Composes AuthProvider and DataProvider to provide all application state
+ *
+ * @param {Object} props - Component props
+ * @param {ReactNode} props.children - Child components that will have access to the app context
+ * @returns {JSX.Element} Provider component
+ */
 export function AppProvider({ children }: { children: ReactNode }) {
   return (
     <AuthProvider>
@@ -22,7 +32,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// Component to ensure auth state is loaded before rendering children
+/**
+ * Component that ensures authentication state is loaded before rendering children
+ * Prevents UI flicker during authentication state loading
+ *
+ * @param {Object} props - Component props
+ * @param {ReactNode} props.children - Child components to render after auth loading is complete
+ * @returns {JSX.Element} Component with loading state handling
+ */
 function AuthLoadingGuard({ children }: { children: ReactNode }) {
   const { isLoading } = useAuth();
   const [localStorageChecked, setLocalStorageChecked] = useState(false);
@@ -58,7 +75,13 @@ export { useAuth, useData };
 // Also re-export the specialized hooks
 export { useUserData, useGroupData, useExpenseData, usePaymentData } from './DataContext';
 
-// For backwards compatibility
+/**
+ * Deprecated hook that combines auth and data contexts
+ * Kept for backwards compatibility with older components
+ *
+ * @returns {Object} Combined auth and data context values
+ * @deprecated Use specific hooks (useAuth, useData) instead
+ */
 export function useAppContext() {
   const auth = useAuth();
   const data = useData();

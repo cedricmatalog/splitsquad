@@ -1,6 +1,15 @@
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { User } from '@/types';
 
+/**
+ * Creates a new user account with the provided email, password, and name
+ * Handles both authentication and user profile creation
+ *
+ * @param {string} email - The user's email address
+ * @param {string} password - The user's password
+ * @param {string} name - The user's display name
+ * @returns {Promise<User | null>} The created user object if successful, null otherwise
+ */
 export async function signUp(email: string, password: string, name: string): Promise<User | null> {
   try {
     console.log(`Attempting to sign up user: ${email}`);
@@ -107,6 +116,14 @@ export async function signUp(email: string, password: string, name: string): Pro
   }
 }
 
+/**
+ * Authenticates a user with the provided email and password
+ * Retrieves the user profile or creates one if it doesn't exist
+ *
+ * @param {string} email - The user's email address
+ * @param {string} password - The user's password
+ * @returns {Promise<User | null>} The authenticated user object if successful, null otherwise
+ */
 export async function signIn(email: string, password: string): Promise<User | null> {
   try {
     console.log(`Attempting to sign in user: ${email}`);
@@ -199,10 +216,9 @@ export async function signIn(email: string, password: string): Promise<User | nu
         avatar: userData.avatar_url || '',
       };
 
-      // Store user in localStorage for persistence
+      // Store in localStorage for offline use and quick access
       try {
         localStorage.setItem('currentUser', JSON.stringify(user));
-        console.log('User stored in localStorage for persistence');
       } catch (e) {
         console.error('Error storing user in localStorage:', e);
       }
@@ -210,62 +226,45 @@ export async function signIn(email: string, password: string): Promise<User | nu
       return user;
     }
 
-    // If Supabase auth fails, try to find user in localStorage
-    // This is for demo/seeded users with password "password123"
-    if (password === 'password123') {
-      console.log('Trying seeded user login with password123');
+    // For demo purposes, try to use test/seeded users when Supabase is not configured
+    if (!isSupabaseConfigured() && process.env.NODE_ENV !== 'production') {
+      // Define seeded test users
+      type SeededUser = {
+        id: string;
+        email: string;
+        name: string;
+        avatar?: string;
+      };
 
-      // Try to get the user from the database by email
-      console.log(`Looking for seeded user with email: ${email}`);
+      const seededUsers: SeededUser[] = [
+        {
+          id: '00000000-0000-0000-0000-000000000001',
+          email: 'alex@example.com',
+          name: 'Alex Johnson',
+        },
+        {
+          id: '00000000-0000-0000-0000-000000000002',
+          email: 'taylor@example.com',
+          name: 'Taylor Smith',
+        },
+      ];
 
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', email)
-        .single();
+      // Check if the email matches any seeded user
+      const seededUser = seededUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
 
-      if (!userError && userData) {
-        console.log(`Found seeded user in database: ${userData.id}`);
+      if (seededUser) {
+        console.log(`Using seeded user for demo: ${seededUser.name}`);
         return {
-          id: userData.id,
-          name: userData.name,
-          email: userData.email,
-          avatar: userData.avatar_url || '',
+          id: seededUser.id,
+          name: seededUser.name,
+          email: seededUser.email,
+          avatar: seededUser.avatar || '',
         };
-      } else if (userError) {
-        console.error('Error finding seeded user in database:', userError);
-      }
-
-      // If still not found, check if there's a user in localStorage
-      // This fallback is for the demo data
-      console.log('Checking localStorage for seeded users');
-
-      try {
-        const storedUsers = localStorage.getItem('users');
-        if (storedUsers) {
-          const users = JSON.parse(storedUsers);
-          // Define a type for the seeded user
-          type SeededUser = {
-            id: string;
-            email: string;
-            name: string;
-            avatar?: string;
-          };
-          const user = users.find((u: SeededUser) => u.email.toLowerCase() === email.toLowerCase());
-
-          if (user) {
-            console.log(`Found seeded user in localStorage: ${user.id}`);
-            return user;
-          }
-        }
-
-        console.log('No matching user found in localStorage');
-      } catch (e) {
-        console.error('Error checking localStorage for users:', e);
       }
     }
 
-    console.log('All login methods failed');
+    // If we get here, authentication failed
+    console.error('Authentication failed for email:', email);
     return null;
   } catch (error) {
     console.error('Error during sign in:', error);
@@ -273,156 +272,198 @@ export async function signIn(email: string, password: string): Promise<User | nu
   }
 }
 
+/**
+ * Signs out the current user from the application
+ * Clears both Supabase session and local storage
+ *
+ * @returns {Promise<void>}
+ */
 export async function signOut(): Promise<void> {
   try {
     console.log('Signing out user');
-    await supabase.auth.signOut();
 
-    // Remove the user from localStorage
+    // Clear local storage first
     try {
       localStorage.removeItem('currentUser');
-      console.log('User removed from localStorage');
     } catch (e) {
       console.error('Error removing user from localStorage:', e);
     }
+
+    // Then sign out from Supabase
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error('Error signing out from Supabase:', error);
+    }
   } catch (error) {
-    console.error('Error signing out:', error);
-    throw error;
+    console.error('Error during sign out:', error);
   }
 }
 
+/**
+ * Gets the current authenticated user
+ * Tries from Supabase session first, then falls back to localStorage
+ *
+ * @returns {Promise<User | null>} The current user if authenticated, null otherwise
+ */
 export async function getCurrentUser(): Promise<User | null> {
   try {
-    console.log('Checking for current user session');
+    console.log('Getting current user');
 
-    // First check if we have a properly configured Supabase instance
-    const supabaseAvailable = isSupabaseConfigured();
+    // Try to get the current session from Supabase
+    const { data, error } = await supabase.auth.getSession();
 
-    if (supabaseAvailable) {
-      // Check for active Supabase session
-      const {
-        data: { session },
-        error: authError,
-      } = await supabase.auth.getSession();
+    if (error) {
+      console.error('Error getting session:', error);
+      throw error;
+    }
 
-      if (authError) {
-        console.error('Error getting session:', authError);
-      } else if (session?.user) {
-        console.log(`Active session found for user: ${session.user.id}`);
+    // If we have a session with a user
+    if (data.session?.user) {
+      const authUser = data.session.user;
+      console.log(`Found authenticated user: ${authUser.id}`);
 
-        // Fix the queries where 406 errors occur
-        // First try by email as the primary lookup method
-        console.log(`Looking for user profile with email: ${session.user.email}`);
+      // Try to get the user profile from our users table
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', authUser.id)
+        .single();
 
+      if (userError) {
+        console.error('Error getting user profile:', userError);
+
+        // Fallback: try to get user by email
         const { data: userByEmail, error: emailError } = await supabase
           .from('users')
-          .select('id, name, email, avatar_url')
-          .eq('email', session.user.email || '')
-          .limit(1)
+          .select('*')
+          .eq('email', authUser.email)
           .single();
 
-        // If user found by email, return it
-        if (!emailError && userByEmail) {
-          console.log(`Found user profile by email: ${userByEmail.id}`);
-          return {
-            id: userByEmail.id,
-            name: userByEmail.name,
-            email: userByEmail.email,
-            avatar: userByEmail.avatar_url || '',
-          };
-        }
+        if (emailError || !userByEmail) {
+          console.error('Error getting user by email:', emailError);
 
-        // If not found by email, try by ID as fallback
-        console.log(`User not found by email, trying ID: ${session.user.id}`);
-
-        // Use await directly since query is a PostgrestBuilder object
-        const { data: userData, error: userError } = await supabase
-          .from('users')
-          .select('id, name, email, avatar_url')
-          .eq('id', session.user.id)
-          .limit(1)
-          .single();
-
-        if (userError || !userData) {
-          console.error('Could not find user profile');
-          return null;
-        } else {
-          console.log(`Found user profile by ID: ${userData.id}`);
-
-          // Convert to our app User type
-          const user = {
-            id: userData.id,
-            name: userData.name,
-            email: userData.email,
-            avatar: userData.avatar_url || '',
-          };
-
-          // Update localStorage for next time
+          // No user profile found, try to get from local storage as last resort
           try {
-            localStorage.setItem('currentUser', JSON.stringify(user));
+            const localUser = localStorage.getItem('currentUser');
+            if (localUser) {
+              return JSON.parse(localUser);
+            }
           } catch (e) {
-            console.error('Error storing user in localStorage:', e);
+            console.error('Error getting user from localStorage:', e);
           }
 
-          return user;
+          return null;
         }
+
+        // Return user found by email
+        return {
+          id: userByEmail.id,
+          name: userByEmail.name,
+          email: userByEmail.email,
+          avatar: userByEmail.avatar_url || '',
+        };
       }
-    } else {
-      console.log('Supabase not properly configured, skipping server session check');
+
+      // Return user found by ID
+      return {
+        id: userData.id,
+        name: userData.name,
+        email: userData.email,
+        avatar: userData.avatar_url || '',
+      };
     }
 
-    // If no Supabase session or Supabase isn't configured, check localStorage
-    console.log('Checking localStorage for persisted user');
-
+    // No active session, try localStorage as fallback for offline usage
     try {
-      const persistedUser = localStorage.getItem('currentUser');
-      if (persistedUser) {
-        const user = JSON.parse(persistedUser);
-        console.log(`Found persisted user in localStorage: ${user.id}`);
-
-        // Skip Supabase verification if it's not properly configured
-        if (!supabaseAvailable) {
-          console.log(
-            'Using localStorage user without verification since Supabase is not configured'
-          );
-          return user;
-        }
-
-        // Otherwise verify with Supabase
-        const { data: userData, error: userError } = await supabase
-          .from('users')
-          .select('id, name, email, avatar_url')
-          .eq('id', user.id)
-          .limit(1)
-          .single();
-
-        if (userError) {
-          // Any API error, use localStorage
-          console.log('Could not verify user with database, using localStorage user');
-          return user; // Return localStorage user without verification
-        }
-
-        if (userData) {
-          console.log(`Verified persisted user exists in database: ${userData.id}`);
-          return {
-            id: userData.id,
-            name: userData.name,
-            email: userData.email,
-            avatar: userData.avatar_url || '',
-          };
-        } else {
-          console.log('User data is null despite no error, using localStorage user');
-          return user;
-        }
+      const localUser = localStorage.getItem('currentUser');
+      if (localUser) {
+        console.log('No active session, using user from localStorage');
+        return JSON.parse(localUser);
       }
     } catch (e) {
-      console.error('Error checking localStorage:', e);
+      console.error('Error getting user from localStorage:', e);
     }
 
-    console.log('No active session found');
+    console.log('No authenticated user found');
     return null;
   } catch (error) {
-    console.error('Error getting current user:', error);
+    console.error('Error in getCurrentUser:', error);
+    return null;
+  }
+}
+
+/**
+ * Updates the current user's profile information
+ *
+ * @param {string} userId - The ID of the user to update
+ * @param {Partial<User>} updates - The fields to update (name, email, avatar)
+ * @returns {Promise<User | null>} The updated user if successful, null otherwise
+ */
+export async function updateUserProfile(
+  userId: string,
+  updates: Partial<Omit<User, 'id'>>
+): Promise<User | null> {
+  try {
+    console.log(`Updating profile for user: ${userId}`);
+
+    // First, get the current user to make sure we have the latest data
+    const { data: currentData, error: getCurrentError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (getCurrentError || !currentData) {
+      console.error('Error getting current user data:', getCurrentError);
+      return null;
+    }
+
+    // Prepare the update data
+    const updateData: Record<string, unknown> = {};
+
+    if (updates.name) {
+      updateData.name = updates.name;
+    }
+
+    if (updates.email) {
+      updateData.email = updates.email;
+    }
+
+    if (updates.avatar) {
+      updateData.avatar_url = updates.avatar;
+    }
+
+    // Update the user profile
+    const { data: userData, error: updateError } = await supabase
+      .from('users')
+      .update(updateData)
+      .eq('id', userId)
+      .select()
+      .single();
+
+    if (updateError) {
+      console.error('Error updating user profile:', updateError);
+      return null;
+    }
+
+    // Return the updated user
+    const updatedUser = {
+      id: userData.id,
+      name: userData.name,
+      email: userData.email,
+      avatar: userData.avatar_url || '',
+    };
+
+    // Update localStorage
+    try {
+      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+    } catch (e) {
+      console.error('Error updating user in localStorage:', e);
+    }
+
+    return updatedUser;
+  } catch (error) {
+    console.error('Error updating user profile:', error);
     return null;
   }
 }

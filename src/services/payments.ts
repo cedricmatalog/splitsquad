@@ -1,7 +1,19 @@
 import { supabase } from '@/lib/supabase';
 import { Payment } from '@/types';
 
-// Get all payments
+/**
+ * Retrieves all payments from the database with optional filtering
+ *
+ * @param {Partial<Payment>} [filter] - Optional filter criteria for payments
+ * @returns {Promise<Payment[]>} Array of payment objects matching the filter
+ *
+ * @example
+ * // Get all payments
+ * const allPayments = await getPayments();
+ *
+ * // Get payments for a specific group
+ * const groupPayments = await getPayments({ groupId: 'group-123' });
+ */
 export async function getPayments(filter?: Partial<Payment>): Promise<Payment[]> {
   try {
     let query = supabase.from('payments').select('*');
@@ -27,7 +39,12 @@ export async function getPayments(filter?: Partial<Payment>): Promise<Payment[]>
   }
 }
 
-// Get a single payment by ID
+/**
+ * Retrieves a single payment by its ID
+ *
+ * @param {string} id - The ID of the payment to retrieve
+ * @returns {Promise<Payment | null>} The payment object if found, null otherwise
+ */
 export async function getPaymentById(id: string): Promise<Payment | null> {
   try {
     const { data, error } = await supabase.from('payments').select('*').eq('id', id).single();
@@ -42,7 +59,14 @@ export async function getPaymentById(id: string): Promise<Payment | null> {
   }
 }
 
-// Create a new payment
+/**
+ * Creates a new payment in the database
+ *
+ * @param {Omit<Payment, 'id'>} payment - The payment data to create (without ID)
+ * @returns {Promise<Payment | null>} The created payment with its ID if successful, null on error
+ *
+ * @throws Will validate payment data and throw errors for invalid payments
+ */
 export async function createPayment(payment: Omit<Payment, 'id'>): Promise<Payment | null> {
   try {
     // Validate payment data
@@ -73,7 +97,13 @@ export async function createPayment(payment: Omit<Payment, 'id'>): Promise<Payme
   }
 }
 
-// Update an existing payment
+/**
+ * Updates an existing payment in the database
+ *
+ * @param {string} id - The ID of the payment to update
+ * @param {Partial<Payment>} payment - The payment fields to update
+ * @returns {Promise<Payment | null>} The updated payment if successful, null on error
+ */
 export async function updatePayment(
   id: string,
   payment: Partial<Payment>
@@ -95,7 +125,12 @@ export async function updatePayment(
   }
 }
 
-// Delete a payment
+/**
+ * Deletes a payment from the database
+ *
+ * @param {string} id - The ID of the payment to delete
+ * @returns {Promise<boolean>} True if deletion was successful, false otherwise
+ */
 export async function deletePayment(id: string): Promise<boolean> {
   try {
     const { error } = await supabase.from('payments').delete().eq('id', id);
@@ -109,7 +144,13 @@ export async function deletePayment(id: string): Promise<boolean> {
   }
 }
 
-// Helper function to convert database format to app format
+/**
+ * Converts a payment from database format to application format
+ * Handles field name transformations and data type conversions
+ *
+ * @param {unknown} dbItem - The raw database record
+ * @returns {Payment} The formatted payment object for application use
+ */
 function convertFromPaymentDB(dbItem: unknown): Payment {
   const item = dbItem as Record<string, unknown>;
   return {
@@ -124,7 +165,13 @@ function convertFromPaymentDB(dbItem: unknown): Payment {
   };
 }
 
-// Helper function to convert app format to database format
+/**
+ * Converts a payment from application format to database format
+ * Handles field name transformations and adds timestamps
+ *
+ * @param {Partial<Payment>} appItem - The application payment object
+ * @returns {Record<string, unknown>} The formatted database record for storing
+ */
 function convertToPaymentDB(appItem: Partial<Payment>): Record<string, unknown> {
   const { groupId, fromUser, toUser, paymentMethod, notes, ...rest } = appItem;
   return {
