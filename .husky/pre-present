@@ -1,0 +1,14 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "Running pre-presentation checks..."
+npm run pre-present
+
+# Check status
+if [ $? -ne 0 ]; then
+  echo "Linting or type checking failed! Please fix issues before presenting."
+  exit 1
+fi
+
+echo "All checks passed. Ready to present!"
+exit 0 

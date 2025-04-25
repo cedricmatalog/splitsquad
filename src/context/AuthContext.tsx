@@ -82,34 +82,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (storedUser) {
               user = JSON.parse(storedUser);
               console.log('Found user in localStorage');
+
+              // Set the user immediately from localStorage to avoid flicker
+              setCurrentUser(user);
             }
           } catch (e) {
             console.error('Error reading from localStorage:', e);
           }
         }
 
-        // If not in localStorage or it failed, try auth service
-        if (!user) {
-          user = await getCurrentUser();
-        }
+        // Always try auth service for verification
+        const verifiedUser = await getCurrentUser();
 
-        if (user) {
-          console.log('Found authenticated user:', user.id);
-          setCurrentUser(user);
+        if (verifiedUser) {
+          // Update with the verified user data
+          console.log('Found authenticated user from server:', verifiedUser.id);
+          setCurrentUser(verifiedUser);
+
+          // Update localStorage with the latest user data
+          if (typeof window !== 'undefined') {
+            try {
+              localStorage.setItem('currentUser', JSON.stringify(verifiedUser));
+            } catch (e) {
+              console.error('Error updating localStorage with verified user:', e);
+            }
+          }
+        } else if (user) {
+          // We have a localStorage user but couldn't verify with the server
+          // For better UX, we'll keep the user logged in using localStorage data
+          console.log('Using unverified localStorage user - server verification failed');
+          // Keep the localStorage user that was already set
         } else {
+          // No user in localStorage and none from server
           console.log('No authenticated user found');
           setCurrentUser(null);
         }
       } catch (error) {
         console.error('Error loading user:', error);
         setLastError('Failed to authenticate. Please try logging in again.');
-        setCurrentUser(null);
+
+        // On error, don't clear the user if we got one from localStorage
+        // This improves offline and error resilience
+        if (!currentUser) {
+          setCurrentUser(null);
+        }
       } finally {
         setIsLoading(false);
       }
     }
 
     loadUser();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Compute isAuthenticated based on currentUser

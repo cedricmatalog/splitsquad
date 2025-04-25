@@ -1,0 +1,10 @@
+{
+  "prePresentation": {
+    "enabled": true,
+    "command": "node scripts/cursor-pre-present.js ${filePath}"
+  },
+  "presentation": {
+    "checkLint": true,
+    "checkTypes": true
+  }
+}

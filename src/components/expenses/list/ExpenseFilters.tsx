@@ -1,7 +1,6 @@
 'use client';
 
-import { Button } from '@/components/ui';
-import { Input } from '@/components/ui';
+import { Button, Input } from '@/components/ui/forms';
 import { DatePicker } from '@/components/ui';
 import { Search, X } from 'lucide-react';
 

@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { Button } from '@/components/ui';
-import { CardHeader, CardTitle } from '@/components/ui';
+import { Button } from '@/components/ui/forms';
+import { CardHeader, CardTitle } from '@/components/ui/layout';
 import { List, PlusCircle } from 'lucide-react';
 
 interface ExpenseCardHeaderProps {
@@ -23,12 +23,12 @@ export function ExpenseCardHeader({
         {title || (groupId ? 'Group Expenses' : 'All Expenses')}
       </CardTitle>
       {showAddButton && (
-        <Button asChild size="sm">
-          <Link href={groupId ? `/expenses/new?groupId=${groupId}` : '/expenses/new'}>
+        <Link href={groupId ? `/expenses/new?groupId=${groupId}` : '/expenses/new'}>
+          <Button size="sm">
             <PlusCircle className="h-4 w-4 mr-2" />
             Add Expense
-          </Link>
-        </Button>
+          </Button>
+        </Link>
       )}
     </CardHeader>
   );

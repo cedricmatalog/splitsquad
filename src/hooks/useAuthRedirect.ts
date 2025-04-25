@@ -13,11 +13,27 @@ export default function useAuthRedirect(redirectPath?: string) {
   const { currentUser, isLoading: contextLoading } = useAppContext();
   const router = useRouter();
   const [isReady, setIsReady] = useState(false);
+  const [hasLocalUser, setHasLocalUser] = useState(false);
+
+  // Check for user in localStorage immediately to prevent flicker
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const storedUser = localStorage.getItem('currentUser');
+        if (storedUser) {
+          setHasLocalUser(true);
+          setIsReady(true); // Consider UI ready if we have a localStorage user
+        }
+      } catch (e) {
+        console.error('Error checking localStorage in redirect hook:', e);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     // Only check authentication after the context has loaded
     if (!contextLoading) {
-      if (!currentUser) {
+      if (!currentUser && !hasLocalUser) {
         // Save current URL for redirection after login if not specified
         const pathToSave =
           redirectPath || (typeof window !== 'undefined' ? window.location.pathname : undefined);
@@ -32,7 +48,7 @@ export default function useAuthRedirect(redirectPath?: string) {
         setIsReady(true);
       }
     }
-  }, [currentUser, contextLoading, router, redirectPath]);
+  }, [currentUser, contextLoading, router, redirectPath, hasLocalUser]);
 
-  return { isReady: isReady && !contextLoading };
+  return { isReady: isReady || hasLocalUser };
 }

@@ -39,6 +39,36 @@ See [GIT_HOOKS.md](./GIT_HOOKS.md) for detailed information about:
 
 This ensures that code quality is maintained throughout the development process, and tests pass before code is committed or pushed.
 
+## Cursor Pre-Presentation Check
+
+This project includes a custom pre-presentation check for [Cursor](https://cursor.sh) IDE. Before presenting code to clients or team members, Cursor will automatically verify that the code meets quality standards.
+
+### Features
+
+- Runs ESLint on files before presenting
+- Performs TypeScript type checking on TypeScript files
+- Prevents presentation of code with linting errors or type errors
+
+### How to Use
+
+The pre-presentation check is automatically enabled through Cursor's configuration in `.cursor/config.json`. When you attempt to present code with Cursor's presentation feature, the check will run automatically.
+
+### Running Manually
+
+You can also run the pre-presentation check manually on a specific file:
+
+```bash
+node scripts/cursor-pre-present.js path/to/your/file.tsx
+```
+
+Or run all quality checks with:
+
+```bash
+npm run pre-present
+```
+
+This helps ensure that all code being shared meets the project's quality standards.
+
 ## Supabase Integration
 
 This project can be configured to use [Supabase](https://supabase.com) as a backend. The application comes with scripts to help you migrate from the mock data to a fully functional Supabase backend.
