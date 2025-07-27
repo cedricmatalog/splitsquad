@@ -9,7 +9,7 @@ import { Database } from '@/types/supabase';
 const supabaseUrl =
   process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://gcrxzivriujieyppigyp.supabase.co';
 const supabaseAnonKey =
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key-for-development';
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdjcnh6aXZyaXVqaWV5cHBpZ3lwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUyMDczNjgsImV4cCI6MjA2MDc4MzM2OH0.KH7xUq9lp6DxMq1Knv9QwSeBseweStN_SxSNze0NpaI';
 
 /**
  * Initialized Supabase client with typed database schema
